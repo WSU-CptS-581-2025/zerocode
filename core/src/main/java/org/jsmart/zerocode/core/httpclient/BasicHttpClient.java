@@ -191,7 +191,7 @@ public class BasicHttpClient {
         long length = entity == null ? -1L : entity.getContentLength();
         return Response
                 .status(httpResponse.getStatusLine().getStatusCode())
-                .entity(length >= 0L ? IOUtils.toString(entity.getContent(), charset) : null)
+                .entity((entity != null || length >= 0L) ? IOUtils.toString(entity.getContent(), charset) : null)
                 .build();
     }
 

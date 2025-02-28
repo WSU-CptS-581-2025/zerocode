@@ -16,7 +16,7 @@ Kafka Data streams and Micro-services API automated regression testing via JSON 
 **License:** [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0) <br/>
 
 
-Zerocode makes it easy to create and maintain automated tests with absolute minimum overhead for [REST](https://github.com/authorjapps/zerocode/wiki/User-journey:-Create,-Update-and-GET-Employee-Details),[SOAP](https://github.com/authorjapps/zerocode/blob/master/README.md#soap-method-invocation-example-with-xml-input), [Kafka Real Time Data Streams](https://github.com/authorjapps/zerocode/wiki/Kafka-Testing-Introduction) and much more. 
+Zerocode makes it easy to create and maintain automated tests with absolute minimum overhead for [REST](https://github.com/authorjapps/zerocode/wiki/User-journey:-Create,-Update-and-GET-Employee-Details),[SOAP](https://github.com/authorjapps/zerocode/wiki/SOAP-method-validation-with-xml-input), [Kafka Real Time Data Streams](https://github.com/authorjapps/zerocode/wiki/Kafka-Testing-Introduction) and much more. 
 It has the best of best ideas and practices from the community to keep it super simple, and the adoption is rapidly growing among the developers & testers community.
 
 Documentation
@@ -28,6 +28,8 @@ Visit here :
 IDE Support By 
 ===
 [<img width="135"  height="120" alt="Jetbrains IDE" src="images/jetbrains.svg">](https://www.jetbrains.com/idea/)
+
+Copyright :copyright: 2025 JetBrains s.r.o. JetBrains and the JetBrains logo are trademarks of JetBrains s.r.o.
 
 
 Maven Dependency
@@ -134,6 +136,6 @@ Zerocode-TDD is used by many companies such as Vocalink, HSBC, HomeOffice(Gov) a
 
 Also, learn more about [Validators Vs Matchers](https://github.com/authorjapps/zerocode/wiki/Validators-and-Matchers) here.
 
-Happy Testing! <g-emoji class="g-emoji" alias="panda_face" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f43c.png">🐼</g-emoji>
+Happy Testing! :panda_face:
 
 🔆 Visit [Documentation](https://zerocode-tdd.tddfy.com) - Indexed, searchable & instantly finds you the results

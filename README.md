@@ -27,9 +27,9 @@ Visit here :
 
 IDE Support By 
 ===
-[<img width="135"  height="120" alt="Jetbrains IDE" src="images/jetbrains.svg">](https://www.jetbrains.com/idea/)
+[<img height="120" alt="Jetbrains IntelliJ IDE" src="https://resources.jetbrains.com/storage/products/company/brand/logos/IntelliJ_IDEA.svg">](https://www.jetbrains.com/idea/)
 
-Copyright :copyright: 2025 JetBrains s.r.o. JetBrains and the JetBrains logo are trademarks of JetBrains s.r.o.
+Copyright :copyright: 2025 JetBrains s.r.o. IntelliJ and the IntelliJ logo are trademarks of JetBrains s.r.o.
 
 
 Maven Dependency

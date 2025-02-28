@@ -230,9 +230,11 @@ public class ZeroCodeMultiStepsScenarioRunnerImpl implements ZeroCodeMultiStepsS
         boolean retryTillSuccess = false;
         int retryDelay = 0;
         int retryMaxTimes = 1;
+        String retryStrategy = "fixed";
         if (thisStep.getRetry() != null) {
             retryMaxTimes = thisStep.getRetry().getMax();
             retryDelay = thisStep.getRetry().getDelay();
+            retryStrategy = thisStep.getRetry().getStrategy();
             retryTillSuccess = true;
         }
 
@@ -308,7 +310,20 @@ public class ZeroCodeMultiStepsScenarioRunnerImpl implements ZeroCodeMultiStepsS
                     LOGGER.info("\n---------------------------------------\n" +
                             "        Retry: Attempt number: {}", retryCounter + 2 +
                             "\n---------------------------------------\n");
-                    waitForDelay(retryDelay);
+
+                    if ("exponential".equalsIgnoreCase(strategy)) {
+                        long calculatedDelay = retryDelay * (long) Math.pow(2, retryCounter);
+
+                        // Limit the delay to 10 seconds as a max delay
+                        if (calculatedDelay > 10000) {
+                            calculatedDelay = 10000;
+                        }
+
+                        waitForDelay(calculatedDelay);
+                    }
+                    else {
+                        waitForDelay(retryDelay);
+                    }
 
                     // Set stepOutcomeGreen to true - Not to write report at finally with printToFile().
                     stepOutcomeGreen = true;

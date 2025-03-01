@@ -191,4 +191,23 @@ public class BasicHttpClientTest {
         final String responseBodyActual = (String) basicHttpClient.handleResponse(closeableHttpResponse).getEntity();
         assertThat(responseBodyActual, CoreMatchers.is(response));
     }
+
+    @Test
+    public void willMockSuccessfullyWithNullBody() throws Exception {
+
+        WireMock.configureFor(9073);
+        givenThat(get(urlEqualTo("/body/none"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withBody((String)null)
+        ));
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        HttpGet request = new HttpGet("http://localhost:9073" + "/body/none");
+        CloseableHttpResponse closeableHttpResponse = httpClient.execute(request);
+        BasicHttpClient basicHttpClient = new BasicHttpClient();
+        final String responseBodyActual = (String) basicHttpClient.handleResponse(closeableHttpResponse).getEntity();
+        httpClient.close();
+        closeableHttpResponse.close();
+        assertThat(responseBodyActual, is(""));
+    }
 }

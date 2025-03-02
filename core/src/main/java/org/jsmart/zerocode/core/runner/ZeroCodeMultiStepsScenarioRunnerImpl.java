@@ -525,7 +525,7 @@ public class ZeroCodeMultiStepsScenarioRunnerImpl implements ZeroCodeMultiStepsS
         return executionResult;
     }
 
-    private void waitForDelay(int delay) {
+    public void waitForDelay(int delay) {
         if (delay > 0) {
             try {
                 Thread.sleep(delay);

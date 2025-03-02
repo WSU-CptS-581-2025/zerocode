@@ -311,8 +311,8 @@ public class ZeroCodeMultiStepsScenarioRunnerImpl implements ZeroCodeMultiStepsS
                             "        Retry: Attempt number: {}", retryCounter + 2 +
                             "\n---------------------------------------\n");
 
-                    if ("exponential".equalsIgnoreCase(strategy)) {
-                        long calculatedDelay = retryDelay * (long) Math.pow(2, retryCounter);
+                    if ("exponential".equalsIgnoreCase(retryStrategy)) {
+                        int calculatedDelay = retryDelay * (int) Math.pow(2, retryCounter);
 
                         // Limit the delay to 10 seconds as a max delay
                         if (calculatedDelay > 10000) {

@@ -39,6 +39,9 @@ public class CorporateProxyNoSslContextHttpClient extends BasicHttpClient {
     @Named("corporate.proxy.password")
     private String proxyPassword;
 
+    private boolean hasFilesToUpload;
+    private Object COOKIE_JSESSIONID_VALUE;
+
     @Override
     public CloseableHttpClient createHttpClient() throws NoSuchAlgorithmException, KeyManagementException, KeyStoreException {
         LOGGER.debug("###Used Http Client for both Http and Https connections with no SSL context");

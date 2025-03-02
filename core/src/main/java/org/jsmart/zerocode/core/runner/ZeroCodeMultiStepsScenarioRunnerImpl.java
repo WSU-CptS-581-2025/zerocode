@@ -267,11 +267,9 @@ public class ZeroCodeMultiStepsScenarioRunnerImpl implements ZeroCodeMultiStepsS
         boolean retryTillSuccess = false;
         int retryDelay = 0;
         int retryMaxTimes = 1;
-        String retryStrategy = "fixed";
         if (thisStep.getRetry() != null) {
             retryMaxTimes = thisStep.getRetry().getMax();
             retryDelay = thisStep.getRetry().getDelay();
-            retryStrategy = thisStep.getRetry().getStrategy();
             retryTillSuccess = true;
         }
 
@@ -347,20 +345,7 @@ public class ZeroCodeMultiStepsScenarioRunnerImpl implements ZeroCodeMultiStepsS
                     LOGGER.info("\n---------------------------------------\n" +
                             "        Retry: Attempt number: {}", retryCounter + 2 +
                             "\n---------------------------------------\n");
-
-                    if ("exponential".equalsIgnoreCase(retryStrategy)) {
-                        int calculatedDelay = retryDelay * (int) Math.pow(2, retryCounter);
-
-                        // Limit the delay to 10 seconds as a max delay
-                        if (calculatedDelay > 10000) {
-                            calculatedDelay = 10000;
-                        }
-
-                        waitForDelay(calculatedDelay);
-                    }
-                    else {
-                        waitForDelay(retryDelay);
-                    }
+                    waitForDelay(retryDelay);
 
                     // Set stepOutcomeGreen to true - Not to write report at finally with printToFile().
                     stepOutcomeGreen = true;
@@ -477,7 +462,6 @@ public class ZeroCodeMultiStepsScenarioRunnerImpl implements ZeroCodeMultiStepsS
         String operationName = thisStep.getOperation();
         String stepId = thisStep.getId();
         String thisStepName = thisStep.getName();
-        Integer timeout = thisStep.getTimeout();
 
         // --------------------------------
         // Resolve the URL patterns if any
@@ -507,7 +491,7 @@ public class ZeroCodeMultiStepsScenarioRunnerImpl implements ZeroCodeMultiStepsS
                         .id(stepId)
                         .request(prettyPrintJson(resolvedRequestJsonMaskApplied));
 
-                executionResult = apiExecutor.executeHttpApi(url, operationName, resolvedRequestJsonMaskRemoved, timeout);
+                executionResult = apiExecutor.executeHttpApi(url, operationName, resolvedRequestJsonMaskRemoved);
                 break;
 
             case JAVA_CALL:
@@ -563,7 +547,7 @@ public class ZeroCodeMultiStepsScenarioRunnerImpl implements ZeroCodeMultiStepsS
         return executionResult;
     }
 
-    public void waitForDelay(int delay) {
+    private void waitForDelay(int delay) {
         if (delay > 0) {
             try {
                 Thread.sleep(delay);

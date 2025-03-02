@@ -30,6 +30,7 @@
 		<dependency>
 			<groupId>com.google.protobuf</groupId>
 			<artifactId>protobuf-java</artifactId>
+    			<version>3.21.12</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.kafka</groupId>
@@ -87,7 +88,7 @@
 				<artifactId>protoc-jar-maven-plugin</artifactId>
 				<version>3.11.4</version>
 				<configuration>
-				    <protocArtifact>com.google.protobuf:protoc:3.21.0-rc-2</protocArtifact>
+        			<protocVersion>3.21.12</protocVersion>
 				</configuration>
 				<executions>
 					<execution>

@@ -45,6 +45,8 @@ public class ZeroCodePackageRunner extends ParentRunner<ScenarioSpec> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ZeroCodePackageRunner.class);
 
     private final Class<?> testClass;
+    private List<ScenarioSpec> scenarioSpecs;
+    private Injector injector;
     private SmartUtils smartUtils;
     protected Description scenarioDescription;
     protected boolean isRunSuccess;

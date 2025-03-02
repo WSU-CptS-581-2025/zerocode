@@ -2,9 +2,6 @@ package org.jsmart.zerocode.core.engine.executor;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-
-import java.util.Optional;
-
 import org.jsmart.zerocode.core.engine.executor.httpapi.HttpApiExecutor;
 import org.jsmart.zerocode.core.engine.executor.javaapi.JavaMethodExecutor;
 import org.jsmart.zerocode.core.engine.preprocessor.ScenarioExecutionState;
@@ -32,9 +29,9 @@ public class ApiServiceExecutorImpl implements ApiServiceExecutor {
     }
 
     @Override
-    public String executeHttpApi(String url, String methodName, String requestJson, Integer timeout) {
+    public String executeHttpApi(String url, String methodName, String requestJson) {
         try {
-            return httpApiExecutor.execute(url, methodName, requestJson, timeout);
+            return httpApiExecutor.execute(url, methodName, requestJson);
         } catch (Throwable severError) {
             LOGGER.error("Ooooooooooops! Something unexpected happened while connecting to the url:{} " +
                     "\n1) Check if the service is running at the host -or-" +

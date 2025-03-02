@@ -25,7 +25,6 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
-import static org.junit.Assert.fail;
 
 public class BasicHttpClientTest {
     private BasicHttpClient basicHttpClient;
@@ -191,26 +190,5 @@ public class BasicHttpClientTest {
         BasicHttpClient basicHttpClient = new BasicHttpClient();
         final String responseBodyActual = (String) basicHttpClient.handleResponse(closeableHttpResponse).getEntity();
         assertThat(responseBodyActual, CoreMatchers.is(response));
-    }
-
-    @Test
-    public void testTimeoutParameter() throws Exception {
-        int timeout = 1000; // 1 second timeout
-        basicHttpClient = new BasicHttpClient();
-
-        WireMock.configureFor(9073);
-        givenThat(get(urlEqualTo("/timeout"))
-                .willReturn(aResponse()
-                        .withFixedDelay(2000) // 2 seconds delay to trigger timeout
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\"message\":\"success\"}")));
-
-        try {
-            basicHttpClient.execute("http://localhost:9073/timeout", "GET", null, null, null, timeout);
-            fail("Expected a timeout exception to be thrown");
-        } catch (IOException e) {
-            assertThat(e.getMessage(), CoreMatchers.containsString("Read timed out"));
-        }
     }
 }

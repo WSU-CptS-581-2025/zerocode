@@ -199,6 +199,7 @@ public class BasicHttpClientTest {
         givenThat(get(urlEqualTo("/body/none"))
                 .willReturn(aResponse()
                         .withStatus(200)
+                        .withHeader("Content-Encoding", "identity")
                         .withBody((String)null)
         ));
         CloseableHttpClient httpClient = HttpClients.createDefault();

@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.jsmart.zerocode.core.domain.EnvProperty;
-import org.jsmart.zerocode.core.domain.Parameterized;
 import org.jsmart.zerocode.core.domain.Step;
 import org.jsmart.zerocode.core.domain.TestMapping;
 import org.junit.runner.Result;

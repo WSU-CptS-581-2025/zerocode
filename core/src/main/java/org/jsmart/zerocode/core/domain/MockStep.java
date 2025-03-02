@@ -24,16 +24,23 @@ public class MockStep {
     private final String url;
     private final JsonNode request;
     private final JsonNode response;
-    private final JsonNode assertions; //<-- In case the wiremock or simulator mock throws a status code etc
+    private final JsonNode assertions;
 
-    // derived value i.e. body as JSON string
-    private String body;
-
-    // derived value i.e. headers as JSON string
-    private String headers;
-
-    // derived value ie headers as Map
-    private Map<String, Object> headersMap;
+    @JsonCreator
+    public MockStep(
+            @JsonProperty("name") String name,
+            @JsonProperty("operation") String operation,
+            @JsonProperty("url") String url,
+            @JsonProperty("request") JsonNode request,
+            @JsonProperty("response") JsonNode response,
+            @JsonProperty("assertions") JsonNode assertions) {
+        this.name = name;
+        this.operation = operation;
+        this.url = url;
+        this.request = request;
+        this.response = response;
+        this.assertions = assertions;
+    }
 
     public String getName() {
         return name;
@@ -82,22 +89,6 @@ public class MockStep {
         }
 
         return headersMap;
-    }
-
-    @JsonCreator
-    public MockStep(
-            @JsonProperty("name") String name,
-            @JsonProperty("operation") String operation,
-            @JsonProperty("url") String url,
-            @JsonProperty("request") JsonNode request,
-            @JsonProperty("response") JsonNode response,
-            @JsonProperty("assertions") JsonNode assertions) {
-        this.name = name;
-        this.operation = operation;
-        this.request = request;
-        this.url = url;
-        this.response = response;
-        this.assertions = assertions;
     }
 
     @Override

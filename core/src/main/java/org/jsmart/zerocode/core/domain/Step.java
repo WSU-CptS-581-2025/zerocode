@@ -29,6 +29,7 @@ public class Step {
     private final JsonNode verify;
     private final String excludeEnvironment;
     private final boolean ignoreStep;
+    private final Integer timeout;
     private String id;
     private JsonNode stepFile;
 
@@ -139,6 +140,10 @@ public class Step {
         return this.excludeEnvironment;
     }
 
+    public Integer getTimeout() {
+        return timeout;
+    }
+
     @JsonCreator
     public Step(
             @JsonProperty("stepLoop") Integer loop,
@@ -154,7 +159,8 @@ public class Step {
             @JsonProperty("verify") JsonNode verify,
             @JsonProperty("verifyMode") String verifyMode,
             @JsonProperty("ignoreStep") boolean ignoreStep,
-            @JsonProperty("excludeEnvironment") String excludeEnvironment) {
+            @JsonProperty("excludeEnvironment") String excludeEnvironment,
+            @JsonProperty("timeout") Integer timeout) {
         this.loop = loop;
         this.retry = retry;
         this.name = name;
@@ -169,6 +175,7 @@ public class Step {
         this.verify = verify;
         this.ignoreStep = ignoreStep;
         this.excludeEnvironment = excludeEnvironment;
+        this.timeout = timeout;
     }
 
     @Override

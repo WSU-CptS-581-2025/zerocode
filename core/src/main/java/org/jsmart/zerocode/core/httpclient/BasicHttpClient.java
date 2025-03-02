@@ -188,9 +188,10 @@ public class BasicHttpClient {
         HttpEntity entity = httpResponse.getEntity();
         Charset charset = ContentType.getOrDefault(httpResponse.getEntity()).getCharset();
         charset = (charset == null) ? Charset.defaultCharset() : charset;
+        long length = entity == null ? -1L : entity.getContentLength();
         return Response
                 .status(httpResponse.getStatusLine().getStatusCode())
-                .entity(entity != null ? IOUtils.toString(entity.getContent(), charset) : null)
+                .entity((entity != null || length >= 0L) ? IOUtils.toString(entity.getContent(), charset) : null)
                 .build();
     }
 

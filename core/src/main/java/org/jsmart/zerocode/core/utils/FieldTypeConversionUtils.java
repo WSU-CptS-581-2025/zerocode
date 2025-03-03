@@ -1,7 +1,5 @@
 package org.jsmart.zerocode.core.utils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -9,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import org.jsmart.zerocode.core.di.provider.ObjectMapperProvider;
 import org.slf4j.LoggerFactory;
 
 public class FieldTypeConversionUtils {

@@ -12,8 +12,6 @@ on:
   push:
     branches:
       - ELJ_05_Testing
-    tags:
-      - test
   
 jobs:
   build:

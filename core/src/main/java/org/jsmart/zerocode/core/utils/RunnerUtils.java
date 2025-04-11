@@ -4,14 +4,28 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
+import org.jsmart.zerocode.core.di.main.ApplicationMainModule;
+import org.jsmart.zerocode.core.di.module.RuntimeHttpClientModule;
+import org.jsmart.zerocode.core.di.module.RuntimeKafkaClientModule;
 import org.jsmart.zerocode.core.domain.EnvProperty;
 import org.jsmart.zerocode.core.domain.Parameterized;
 import org.jsmart.zerocode.core.domain.Step;
+import org.jsmart.zerocode.core.domain.TargetEnv;
 import org.jsmart.zerocode.core.domain.TestMapping;
+import org.jsmart.zerocode.core.domain.UseHttpClient;
+import org.jsmart.zerocode.core.domain.UseKafkaClient;
+import org.jsmart.zerocode.core.httpclient.BasicHttpClient;
+import org.jsmart.zerocode.core.httpclient.ssl.SslTrustHttpClient;
+import org.jsmart.zerocode.core.kafka.client.BasicKafkaClient;
+import org.jsmart.zerocode.core.kafka.client.ZerocodeCustomKafkaClient;
 import org.junit.runner.Result;
 import org.junit.runner.notification.RunListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.util.Modules;
 
 import static java.lang.System.getProperty;
 import static org.jsmart.zerocode.core.constants.ZeroCodeReportConstants.CHARTS_AND_CSV;
@@ -140,6 +154,48 @@ public class RunnerUtils {
                 logger.error("### Exception occurred while handling non-maven(e.g. Gradle) report generation => " + e);
                 throw new RuntimeException(e);
             }
+        }
+    }
+
+    public static UseHttpClient getUseHttpClient(Class<?> testClass) {
+        return testClass.getAnnotation(UseHttpClient.class);
+    }
+
+    public static UseKafkaClient getUseKafkaClient(Class<?> testClass) {
+        return testClass.getAnnotation(UseKafkaClient.class);
+    }
+
+    public static Class<? extends BasicHttpClient> createCustomHttpClientOrDefault(Class<?> testClass) {
+        final UseHttpClient httpClientAnnotated = getUseHttpClient(testClass);
+        return httpClientAnnotated != null ? httpClientAnnotated.value() : SslTrustHttpClient.class;
+    }
+
+    public static Class<? extends BasicKafkaClient> createCustomKafkaClientOrDefault(Class<?> testClass) {
+        final UseKafkaClient kafkaClientAnnotated = getUseKafkaClient(testClass);
+        return kafkaClientAnnotated != null ? kafkaClientAnnotated.value() : ZerocodeCustomKafkaClient.class;
+    }
+
+    public static Injector getMainModuleInjector(Class<?> testClass) {
+        //TODO: Synchronise this with e.g. synchronized (ZeroCodePackageRunner.class) {}
+        final TargetEnv envAnnotation = testClass.getAnnotation(TargetEnv.class);
+        String serverEnv = envAnnotation != null ? envAnnotation.value() : "config_hosts.properties";
+
+        serverEnv = getEnvSpecificConfigFile(serverEnv, testClass);
+
+        Class<? extends BasicHttpClient> runtimeHttpClient = createCustomHttpClientOrDefault(testClass);
+        Class<? extends BasicKafkaClient> runtimeKafkaClient = createCustomKafkaClientOrDefault(testClass);
+
+        return Guice.createInjector(Modules.override(new ApplicationMainModule(serverEnv))
+            .with(
+                    new RuntimeHttpClientModule(runtimeHttpClient),
+                    new RuntimeKafkaClientModule(runtimeKafkaClient)
+            ));
+    }
+
+    public static Injector getMainModuleInjectorSyncronized(Class<?> testClass) {
+        // Synchronise this with an object lock e.g. synchronized (ZeroCodeUnitRunner.class) {}
+        synchronized (Thread.currentThread().getStackTrace()) {
+            return getMainModuleInjector(testClass);
         }
     }
 }

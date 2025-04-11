@@ -25,6 +25,7 @@ import org.jsmart.zerocode.core.httpclient.ssl.SslTrustHttpClient;
 import org.jsmart.zerocode.core.kafka.client.BasicKafkaClient;
 import org.jsmart.zerocode.core.kafka.client.ZerocodeCustomKafkaClient;
 import org.jsmart.zerocode.core.report.ZeroCodeReportGenerator;
+import org.jsmart.zerocode.core.utils.RunnerUtils;
 import org.jsmart.zerocode.core.utils.SmartUtils;
 import org.junit.runner.Description;
 import org.junit.runner.notification.RunListener;
@@ -39,6 +40,7 @@ import static java.lang.System.getProperty;
 import static org.jsmart.zerocode.core.constants.ZeroCodeReportConstants.CHARTS_AND_CSV;
 import static org.jsmart.zerocode.core.constants.ZeroCodeReportConstants.ZEROCODE_JUNIT;
 import static org.jsmart.zerocode.core.utils.RunnerUtils.getEnvSpecificConfigFile;
+import static org.jsmart.zerocode.core.utils.RunnerUtils.getMainModuleInjectorSyncronized;
 import static org.jsmart.zerocode.core.utils.RunnerUtils.handleTestCompleted;
 
 public class ZeroCodePackageRunner extends ParentRunner<ScenarioSpec> {
@@ -66,7 +68,8 @@ public class ZeroCodePackageRunner extends ParentRunner<ScenarioSpec> {
     }
 
     protected SmartUtils getInjectedSmartUtilsClass() {
-        return getMainModuleInjector().getInstance(SmartUtils.class);
+        return RunnerUtils.getMainModuleInjectorSyncronized(SmartUtils.class)
+            .getInstance(SmartUtils.class);
     }
 
     @Inject
@@ -152,7 +155,8 @@ public class ZeroCodePackageRunner extends ParentRunner<ScenarioSpec> {
     }
 
     protected RunListener createTestUtilityListener() {
-        return getMainModuleInjector().getInstance(TestUtilityListener.class);
+        return RunnerUtils.getMainModuleInjectorSyncronized(TestUtilityListener.class)
+            .getInstance(TestUtilityListener.class);
     }
 
 
@@ -190,22 +194,22 @@ public class ZeroCodePackageRunner extends ParentRunner<ScenarioSpec> {
 
     // This is exact duplicate of ZeroCodeUnitRunner.getMainModuleInjector
     // Refactor and maintain a single method in RunnerUtils
-    public Injector getMainModuleInjector() {
-        //TODO: Synchronise this with e.g. synchronized (ZeroCodePackageRunner.class) {}
-        final TargetEnv envAnnotation = testClass.getAnnotation(TargetEnv.class);
-        String serverEnv = envAnnotation != null ? envAnnotation.value() : "config_hosts.properties";
+    // public Injector getMainModuleInjector() {
+    //     //TODO: Synchronise this with e.g. synchronized (ZeroCodePackageRunner.class) {}
+    //     final TargetEnv envAnnotation = testClass.getAnnotation(TargetEnv.class);
+    //     String serverEnv = envAnnotation != null ? envAnnotation.value() : "config_hosts.properties";
 
-        serverEnv = getEnvSpecificConfigFile(serverEnv, testClass);
+    //     serverEnv = getEnvSpecificConfigFile(serverEnv, testClass);
 
-        Class<? extends BasicHttpClient> runtimeHttpClient = createCustomHttpClientOrDefault();
-        Class<? extends BasicKafkaClient> runtimeKafkaClient = createCustomKafkaClientOrDefault();
+    //     Class<? extends BasicHttpClient> runtimeHttpClient = createCustomHttpClientOrDefault();
+    //     Class<? extends BasicKafkaClient> runtimeKafkaClient = createCustomKafkaClientOrDefault();
 
-        return createInjector(Modules.override(new ApplicationMainModule(serverEnv))
-                .with(
-                        new RuntimeHttpClientModule(runtimeHttpClient),
-                        new RuntimeKafkaClientModule(runtimeKafkaClient)
-                ));
-    }
+    //     return createInjector(Modules.override(new ApplicationMainModule(serverEnv))
+    //             .with(
+    //                     new RuntimeHttpClientModule(runtimeHttpClient),
+    //                     new RuntimeKafkaClientModule(runtimeKafkaClient)
+    //             ));
+    // }
 
     public void setSmartUtils(SmartUtils smartUtils) {
         this.smartUtils = smartUtils;
@@ -227,31 +231,33 @@ public class ZeroCodePackageRunner extends ParentRunner<ScenarioSpec> {
         this.zeroCodeMultiStepsScenarioRunner = zeroCodeMultiStepsScenarioRunner;
     }
 
-    public Class<? extends BasicKafkaClient> createCustomKafkaClientOrDefault() {
-        final UseKafkaClient kafkaClientAnnotated = getUseKafkaClient();
-        return kafkaClientAnnotated != null ? kafkaClientAnnotated.value() : ZerocodeCustomKafkaClient.class;
-    }
+    // public Class<? extends BasicKafkaClient> createCustomKafkaClientOrDefault() {
+    //     final UseKafkaClient kafkaClientAnnotated = getUseKafkaClient();
+    //     return kafkaClientAnnotated != null ? kafkaClientAnnotated.value() : ZerocodeCustomKafkaClient.class;
+    // }
 
-    public Class<? extends BasicHttpClient> createCustomHttpClientOrDefault() {
-        final UseHttpClient httpClientAnnotated = getUseHttpClient();
-        return httpClientAnnotated != null ? httpClientAnnotated.value() : SslTrustHttpClient.class;
-    }
+    // public Class<? extends BasicHttpClient> createCustomHttpClientOrDefault() {
+    //     final UseHttpClient httpClientAnnotated = getUseHttpClient();
+    //     return httpClientAnnotated != null ? httpClientAnnotated.value() : SslTrustHttpClient.class;
+    // }
 
-    public UseHttpClient getUseHttpClient() {
-        return testClass.getAnnotation(UseHttpClient.class);
-    }
+    // public UseHttpClient getUseHttpClient() {
+    //     return testClass.getAnnotation(UseHttpClient.class);
+    // }
 
-    public UseKafkaClient getUseKafkaClient() {
-        return testClass.getAnnotation(UseKafkaClient.class);
-    }
+    // public UseKafkaClient getUseKafkaClient() {
+    //     return testClass.getAnnotation(UseKafkaClient.class);
+    // }
 
     private ZeroCodeMultiStepsScenarioRunner getInjectedMultiStepsRunner() {
-        zeroCodeMultiStepsScenarioRunner = getMainModuleInjector().getInstance(ZeroCodeMultiStepsScenarioRunner.class);
+        zeroCodeMultiStepsScenarioRunner = RunnerUtils.getMainModuleInjectorSyncronized(ZeroCodeReportGenerator.class)
+            .getInstance(ZeroCodeMultiStepsScenarioRunner.class);
         return zeroCodeMultiStepsScenarioRunner;
     }
 
     private ZeroCodeReportGenerator getInjectedReportGenerator() {
-        return getMainModuleInjector().getInstance(ZeroCodeReportGenerator.class);
+        return RunnerUtils.getMainModuleInjectorSyncronized(ZeroCodeReportGenerator.class)
+            .getInstance(ZeroCodeReportGenerator.class);
     }
 
     private void handleNoRunListenerReport(RunListener reportListener) {

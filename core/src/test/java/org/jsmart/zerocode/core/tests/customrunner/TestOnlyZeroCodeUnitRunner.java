@@ -4,6 +4,7 @@ import org.jsmart.simulator.main.SimpleRestJsonSimulatorsMain;
 import org.jsmart.zerocode.core.httpclient.BasicHttpClient;
 import org.jsmart.zerocode.core.httpclient.ssl.SslTrustHttpClient;
 import org.jsmart.zerocode.core.runner.ZeroCodeUnitRunner;
+import org.jsmart.zerocode.core.utils.RunnerUtils;
 import org.junit.runners.model.InitializationError;
 
 public class TestOnlyZeroCodeUnitRunner extends ZeroCodeUnitRunner {
@@ -26,7 +27,9 @@ public class TestOnlyZeroCodeUnitRunner extends ZeroCodeUnitRunner {
     }
 
     public Class<? extends BasicHttpClient> createCustomHttpClientOrDefault() {
-        return getUseHttpClient() == null? SslTrustHttpClient.class : getUseHttpClient().value();
+        return RunnerUtils.getUseHttpClient(TestOnlyZeroCodeUnitRunner.class) == null
+            ? SslTrustHttpClient.class
+            : RunnerUtils.getUseHttpClient(TestOnlyZeroCodeUnitRunner.class).value();
     }
 
 }

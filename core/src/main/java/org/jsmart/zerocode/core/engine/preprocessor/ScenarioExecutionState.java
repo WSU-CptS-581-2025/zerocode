@@ -1,6 +1,6 @@
 package org.jsmart.zerocode.core.engine.preprocessor;
 
-import org.apache.commons.text.StringSubstitutor;
+import org.jsmart.zerocode.core.utils.SmartUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,7 +33,7 @@ public class ScenarioExecutionState {
     }
 
     public Optional<StepExecutionState> getExecutedStepState(String stepName) {
-        return Optional.of(allStepsLinkedMap.get(stepName));
+        return Optional.ofNullable(allStepsLinkedMap.get(stepName));
     }
 
     public List<StepExecutionState> getAllSteps() {
@@ -55,7 +55,6 @@ public class ScenarioExecutionState {
     public String getResolvedScenarioState() {
         final String commaSeparatedStepResults = String.join(", ", getAllStepsInStringList());
         paramMap.put("STEP_REQUEST_RESPONSE_SECTION", commaSeparatedStepResults);
-
-        return (new StringSubstitutor(paramMap)).replace(scenarioStateTemplate);
+        return SmartUtils.resolveToken(scenarioStateTemplate, paramMap);
     }
 }

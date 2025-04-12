@@ -1,7 +1,7 @@
 package org.jsmart.zerocode.core.engine.preprocessor;
 
-import org.apache.commons.text.StringSubstitutor;
 import org.jsmart.zerocode.core.domain.Step;
+import org.jsmart.zerocode.core.utils.SmartUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,8 +36,7 @@ public class StepExecutionState {
     }
 
     public String getResolvedStep() {
-        StringSubstitutor sub = new StringSubstitutor(paramMap);
-        return sub.replace(requestResponseState);
+        return SmartUtils.resolveToken(requestResponseState, paramMap);
     }
 
     public String getStepName() {

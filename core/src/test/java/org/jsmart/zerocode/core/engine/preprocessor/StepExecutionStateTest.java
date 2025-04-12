@@ -27,7 +27,7 @@ public class StepExecutionStateTest {
                 "    \"id\" : 10101\n" +
                 "}");
 
-        JSONAssert.assertEquals(String.format("{%s}", stepExecutionState.getResolvedStep()), "{\n" +
+        JSONAssert.assertEquals("{\n" +
                 "    \"Step-1\": {\n" +
                 "        \"request\": {\n" +
                 "            \"customer\": {\n" +
@@ -38,7 +38,9 @@ public class StepExecutionStateTest {
                 "            \"id\": 10101\n" +
                 "        }\n" +
                 "    }\n" +
-                "}", true);
+                "}",
+                String.format("{%s}", stepExecutionState.getResolvedStep()),
+                true);
     }
 
     @Test
@@ -55,7 +57,7 @@ public class StepExecutionStateTest {
 
         String resolvedString = stepExecutionState.getResolvedStep();
 
-        JSONAssert.assertEquals(String.format("{%s}", resolvedString), "{\n" +
+        JSONAssert.assertEquals("{\n" +
                 "    \"Step-X1\": {\n" +
                 "        \"request\": {\n" +
                 "            \"customer\": {\n" +
@@ -66,6 +68,8 @@ public class StepExecutionStateTest {
                 "            \"id\": 10101\n" +
                 "        }\n" +
                 "    }\n" +
-                "}", true);
+                "}",
+                String.format("{%s}", resolvedString),
+                true);
     }
 }

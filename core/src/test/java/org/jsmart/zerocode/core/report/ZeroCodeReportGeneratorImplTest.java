@@ -1,22 +1,29 @@
 package org.jsmart.zerocode.core.report;
 
+import com.aventstack.extentreports.ExtentReports;
+import com.aventstack.extentreports.ExtentTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jsmart.zerocode.core.di.provider.ObjectMapperProvider;
+import org.jsmart.zerocode.core.domain.reports.ZeroCodeExecResult;
+import org.jsmart.zerocode.core.domain.reports.ZeroCodeReport;
 import org.jsmart.zerocode.core.domain.reports.ZeroCodeReportStep;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.jsmart.zerocode.core.constants.ZeroCodeReportConstants.RESULT_FAIL;
 import static org.jsmart.zerocode.core.constants.ZeroCodeReportConstants.RESULT_PASS;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class ZeroCodeReportGeneratorImplTest {
 
@@ -173,4 +180,56 @@ public class ZeroCodeReportGeneratorImplTest {
 
     }
 
+    @Test
+    public void shouldProcessReportAndAssignMetadata() {
+        // Arrange
+        ZeroCodeReport mockReport = mock(ZeroCodeReport.class);
+        ZeroCodeExecResult mockScenario = mock(ZeroCodeExecResult.class);
+        ExtentReports mockExtentReports = mock(ExtentReports.class);
+        ExtentTest mockTest = mock(ExtentTest.class);
+
+        when(mockReport.getResults()).thenReturn(Collections.singletonList(mockScenario));
+        when(mockScenario.getScenarioName()).thenReturn("Test Scenario");
+        when(mockExtentReports.createTest(anyString())).thenReturn(mockTest);
+
+        // Act
+        zeroCodeReportGenerator.processReport(mockReport, mockExtentReports);
+
+        // Assert
+        verify(mockExtentReports).createTest("Test Scenario");
+        verify(mockTest).assignCategory(anyString());
+        verify(mockTest).assignAuthor(anyString());
+    }
+
+    @Test
+    public void shouldAssignDefaultAndOptionalCategories() {
+        // Arrange
+        ExtentTest mockTest = mock(ExtentTest.class);
+        ZeroCodeExecResult mockScenario = mock(ZeroCodeExecResult.class);
+
+        when(mockScenario.getScenarioName()).thenReturn("Test Scenario #Category1 #Category2");
+
+        // Act
+        zeroCodeReportGenerator.assignCategory(mockTest, mockScenario);
+
+        // Assert
+        verify(mockTest).assignCategory("Regression");
+        verify(mockTest).assignCategory("#Category1", "#Category2");
+    }
+
+    @Test
+    public void shouldAssignDefaultAndOptionalAuthors() {
+        // Arrange
+        ExtentTest mockTest = mock(ExtentTest.class);
+        ZeroCodeExecResult mockScenario = mock(ZeroCodeExecResult.class);
+
+        when(mockScenario.getScenarioName()).thenReturn("Test Scenario @Author1 @Author2");
+
+        // Act
+        zeroCodeReportGenerator.assignAuthors(mockTest, mockScenario);
+
+        // Assert
+        verify(mockTest).assignAuthor("All");
+        verify(mockTest).assignAuthor("@Author1", "@Author2");
+    }
 }

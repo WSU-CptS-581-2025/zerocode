@@ -192,25 +192,6 @@ public class ZeroCodePackageRunner extends ParentRunner<ScenarioSpec> {
 
     }
 
-    // This is exact duplicate of ZeroCodeUnitRunner.getMainModuleInjector
-    // Refactor and maintain a single method in RunnerUtils
-    // public Injector getMainModuleInjector() {
-    //     //TODO: Synchronise this with e.g. synchronized (ZeroCodePackageRunner.class) {}
-    //     final TargetEnv envAnnotation = testClass.getAnnotation(TargetEnv.class);
-    //     String serverEnv = envAnnotation != null ? envAnnotation.value() : "config_hosts.properties";
-
-    //     serverEnv = getEnvSpecificConfigFile(serverEnv, testClass);
-
-    //     Class<? extends BasicHttpClient> runtimeHttpClient = createCustomHttpClientOrDefault();
-    //     Class<? extends BasicKafkaClient> runtimeKafkaClient = createCustomKafkaClientOrDefault();
-
-    //     return createInjector(Modules.override(new ApplicationMainModule(serverEnv))
-    //             .with(
-    //                     new RuntimeHttpClientModule(runtimeHttpClient),
-    //                     new RuntimeKafkaClientModule(runtimeKafkaClient)
-    //             ));
-    // }
-
     public void setSmartUtils(SmartUtils smartUtils) {
         this.smartUtils = smartUtils;
     }
@@ -230,24 +211,6 @@ public class ZeroCodePackageRunner extends ParentRunner<ScenarioSpec> {
     public void setZeroCodeMultiStepsScenarioRunner(ZeroCodeMultiStepsScenarioRunner zeroCodeMultiStepsScenarioRunner) {
         this.zeroCodeMultiStepsScenarioRunner = zeroCodeMultiStepsScenarioRunner;
     }
-
-    // public Class<? extends BasicKafkaClient> createCustomKafkaClientOrDefault() {
-    //     final UseKafkaClient kafkaClientAnnotated = getUseKafkaClient();
-    //     return kafkaClientAnnotated != null ? kafkaClientAnnotated.value() : ZerocodeCustomKafkaClient.class;
-    // }
-
-    // public Class<? extends BasicHttpClient> createCustomHttpClientOrDefault() {
-    //     final UseHttpClient httpClientAnnotated = getUseHttpClient();
-    //     return httpClientAnnotated != null ? httpClientAnnotated.value() : SslTrustHttpClient.class;
-    // }
-
-    // public UseHttpClient getUseHttpClient() {
-    //     return testClass.getAnnotation(UseHttpClient.class);
-    // }
-
-    // public UseKafkaClient getUseKafkaClient() {
-    //     return testClass.getAnnotation(UseKafkaClient.class);
-    // }
 
     private ZeroCodeMultiStepsScenarioRunner getInjectedMultiStepsRunner() {
         zeroCodeMultiStepsScenarioRunner = RunnerUtils.getMainModuleInjectorSyncronized(ZeroCodeReportGenerator.class)

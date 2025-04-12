@@ -6,9 +6,11 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
@@ -25,6 +27,10 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class BasicHttpClientTest {
     private BasicHttpClient basicHttpClient;
@@ -191,4 +197,88 @@ public class BasicHttpClientTest {
         final String responseBodyActual = (String) basicHttpClient.handleResponse(closeableHttpResponse).getEntity();
         assertThat(responseBodyActual, CoreMatchers.is(response));
     }
+
+    @Test
+    public void testGetContentType_withValidHeader() {
+        BasicHttpClient client = new BasicHttpClient();
+        Map<String, Object> headers = new HashMap<>();
+        headers.put("Content-Type", "application/json");
+
+        String contentType = client.getContentType(headers);
+
+        assertEquals("application/json", contentType);
+    }
+
+    @Test
+    public void testGetContentType_withNullHeaders() {
+        BasicHttpClient client = new BasicHttpClient();
+
+        String contentType = client.getContentType(null);
+
+        assertNull(contentType);
+    }
+
+    @Test
+    public void testGetContentType_withoutContentTypeKey() {
+        BasicHttpClient client = new BasicHttpClient();
+        Map<String, Object> headers = new HashMap<>();
+        headers.put("Accept", "application/json");
+
+        String contentType = client.getContentType(headers);
+
+        assertNull(contentType);
+    }
+
+
+    @Test
+    public void testDispatch_withFormUrlEncoded_returnsFormBuilder() throws Exception {
+        BasicHttpClient client = new BasicHttpClient();
+        String body = "{\"key\":\"value\"}";
+        RequestBuilder builder = client.dispatchRequestBuilder("application/x-www-form-urlencoded", "http://localhost", "POST", body);
+
+        HttpEntity entity = builder.getEntity();
+        assertNotNull(entity);
+        assertEquals("application/x-www-form-urlencoded", builder.getFirstHeader("Content-Type").getValue());
+    }
+
+    @Test
+    public void testDispatch_withMultipart_returnsMultipartBuilder() throws Exception {
+        BasicHttpClient client = new BasicHttpClient();
+        String multipartBody = "{\"files\":[], \"boundary\":\"boundary123\"}";
+        RequestBuilder builder = client.dispatchRequestBuilder("multipart/form-data", "http://localhost", "POST", multipartBody);
+
+        assertTrue(builder.getEntity().getContentType().getValue().contains("multipart/form-data"));
+    }
+
+    @Test
+    public void testBuildJsonEntity_createsProperEntity() throws Exception {
+        BasicHttpClient client = new BasicHttpClient();
+        String jsonBody = "{\"name\":\"Ben\",\"age\":42}";
+
+        HttpEntity entity = client.buildJsonEntity(jsonBody);
+
+        assertNotNull(entity);
+        assertEquals("application/json", ContentType.get(entity).getMimeType());
+
+        String content = EntityUtils.toString(entity);
+        assertTrue(content.contains("\"name\":\"Ben\""));
+    }
+
+    @Test
+    public void testBuildFormEntity_createsUrlEncodedForm() throws Exception {
+        BasicHttpClient client = new BasicHttpClient();
+        Map<String, Object> formParams = new HashMap<>();
+        formParams.put("username", "ben");
+        formParams.put("password", "12345");
+
+        HttpEntity entity = client.buildFormEntity(formParams);
+
+        assertNotNull(entity);
+        assertEquals("application/x-www-form-urlencoded", ContentType.get(entity).getMimeType());
+
+        String content = EntityUtils.toString(entity);
+        assertTrue(content.contains("username=ben"));
+        assertTrue(content.contains("password=12345"));
+    }
+
 }

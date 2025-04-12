@@ -282,12 +282,15 @@ public class BasicHttpClient {
                 .setUri(httpUrl);
 
         if (reqBodyAsString != null) {
-            HttpEntity httpEntity = EntityBuilder.create()
-                    .setContentType(APPLICATION_JSON)
-                    .setText(reqBodyAsString)
-                    .build();
-            requestBuilder.setEntity(httpEntity);
+            requestBuilder.setEntity(buildJsonEntity(reqBodyAsString));
         }
+        // if (reqBodyAsString != null) {
+        //     HttpEntity httpEntity = EntityBuilder.create()
+        //             .setContentType(APPLICATION_JSON)
+        //             .setText(reqBodyAsString)
+        //             .build();
+        //     requestBuilder.setEntity(httpEntity);
+        // }
         return requestBuilder;
     }
 
@@ -303,12 +306,7 @@ public class BasicHttpClient {
                 .setUri(httpUrl);
         if (reqBodyAsString != null) {
             Map<String, Object> reqBodyMap = HelperJsonUtils.readObjectAsMap(reqBodyAsString);
-            List<NameValuePair> reqBody = new ArrayList<>();
-             for(String key : reqBodyMap.keySet()) {
-                 reqBody.add(new BasicNameValuePair(key, reqBodyMap.get(key).toString()));
-             }
-             HttpEntity httpEntity = new UrlEncodedFormEntity(reqBody);
-             requestBuilder.setEntity(httpEntity);
+            requestBuilder.setEntity(buildFormEntity(reqBodyMap));
             requestBuilder.setHeader(CONTENT_TYPE, APPLICATION_FORM_URL_ENCODED);
         }
         return requestBuilder;
@@ -384,25 +382,55 @@ public class BasicHttpClient {
 
     public RequestBuilder createRequestBuilder(String httpUrl, String methodName, Map<String, Object> headers, String reqBodyAsString) throws IOException {
 
-        String contentType = headers != null? (String) headers.get(CONTENT_TYPE) :null;
+        String contentType = getContentType(headers);
 
-        if(contentType!=null){
+        return dispatchRequestBuilder(contentType, httpUrl, methodName, reqBodyAsString);
 
-            if(contentType.equals(MULTIPART_FORM_DATA)){
+        // if(contentType!=null){
 
-                return createFileUploadRequestBuilder(httpUrl, methodName, reqBodyAsString);
+        //     if(contentType.equals(MULTIPART_FORM_DATA)){
 
-            } else if(contentType.equals(APPLICATION_FORM_URL_ENCODED)) {
+        //         return createFileUploadRequestBuilder(httpUrl, methodName, reqBodyAsString);
 
-                return createFormUrlEncodedRequestBuilder(httpUrl, methodName, reqBodyAsString);
-            }
-            // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-            // Extension - Any other header types to be specially handled here
-            // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-            // else if(contentType.equals("OTHER-TYPES")){
-            //    Handling logic
-            // }
-        }
-        return createDefaultRequestBuilder(httpUrl, methodName, reqBodyAsString);
+        //     } else if(contentType.equals(APPLICATION_FORM_URL_ENCODED)) {
+
+        //         return createFormUrlEncodedRequestBuilder(httpUrl, methodName, reqBodyAsString);
+        //     }
+        //     // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+        //     // Extension - Any other header types to be specially handled here
+        //     // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+        //     // else if(contentType.equals("OTHER-TYPES")){
+        //     //    Handling logic
+        //     // }
+        // }
+        // return createDefaultRequestBuilder(httpUrl, methodName, reqBodyAsString);
     }
+
+    public String getContentType(Map<String, Object> headers) {
+            return headers != null ? (String) headers.get(CONTENT_TYPE) : null;
+        }
+        
+    public RequestBuilder dispatchRequestBuilder(String contentType, String url, String method, String body) throws IOException {
+            if (MULTIPART_FORM_DATA.equals(contentType)) {
+                return createFileUploadRequestBuilder(url, method, body);
+            } else if (APPLICATION_FORM_URL_ENCODED.equals(contentType)) {
+                return createFormUrlEncodedRequestBuilder(url, method, body);
+            }
+            return createDefaultRequestBuilder(url, method, body);
+        }
+
+    public HttpEntity buildJsonEntity(String jsonBody) {
+            return EntityBuilder.create()
+                    .setContentType(ContentType.APPLICATION_JSON)
+                    .setText(jsonBody)
+                    .build();
+        }
+        
+    public HttpEntity buildFormEntity(Map<String, Object> formParams) {
+            List<NameValuePair> nameValuePairs = new ArrayList<>();
+            for (Map.Entry<String, Object> entry : formParams.entrySet()) {
+                nameValuePairs.add(new BasicNameValuePair(entry.getKey(), entry.getValue().toString()));
+            }
+            return new UrlEncodedFormEntity(nameValuePairs, Charset.defaultCharset());
+        }        
 }

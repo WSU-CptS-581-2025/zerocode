@@ -10,10 +10,9 @@ import org.jsmart.zerocode.core.domain.Step;
 import org.jsmart.zerocode.core.utils.SmartUtils;
 import org.jukito.JukitoRunner;
 import org.jukito.TestModule;
+import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -21,9 +20,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @RunWith(JukitoRunner.class)
 public class ZeroCodeParameterizedProcessorImplTest {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     public static class JukitoModule extends TestModule {
         @Override
@@ -56,8 +52,9 @@ public class ZeroCodeParameterizedProcessorImplTest {
                 .getJsonDocumentAsString("unit_test_files/engine_unit_test_jsons/12_scenario_parameterized_wrong_dsl.json");
         ScenarioSpec scenarioSpec = mapper.readValue(jsonDocumentAsString, ScenarioSpec.class);
 
-        expectedException.expectMessage("Scenario spec was invalid. Please check the DSL format");
-        ScenarioSpec scenarioSpecResolved = parameterizedProcessor.resolveParameterized(scenarioSpec, 0);
+        Assert.assertThrows("Scenario spec was invalid. Please check the DSL format",
+                RuntimeException.class,
+                () -> parameterizedProcessor.resolveParameterized(scenarioSpec, 0));
     }
 
     @Test
@@ -67,10 +64,10 @@ public class ZeroCodeParameterizedProcessorImplTest {
         ScenarioSpec scenarioSpec = mapper.readValue(jsonDocumentAsString, ScenarioSpec.class);
 
         ScenarioSpec scenarioSpecResolved = parameterizedProcessor.resolveParameterized(scenarioSpec, 0);
-        assertThat(scenarioSpecResolved.getSteps().get(0).getUrl(), is("/anUrl/hello"));
+        Assert.assertEquals("/anUrl/hello", scenarioSpecResolved.getSteps().get(0).getUrl());
 
         scenarioSpecResolved = parameterizedProcessor.resolveParameterized(scenarioSpec, 1);
-        assertThat(scenarioSpecResolved.getSteps().get(0).getUrl(), is("/anUrl/123"));
+        Assert.assertEquals("/anUrl/123", scenarioSpecResolved.getSteps().get(0).getUrl());
 
     }
 

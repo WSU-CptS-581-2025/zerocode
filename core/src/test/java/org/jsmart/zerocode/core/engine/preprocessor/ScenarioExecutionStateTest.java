@@ -3,6 +3,7 @@ package org.jsmart.zerocode.core.engine.preprocessor;
 import org.jsmart.zerocode.TestUtility;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Assert;
 import org.skyscreamer.jsonassert.JSONAssert;
 
 public class ScenarioExecutionStateTest {
@@ -75,5 +76,27 @@ public class ScenarioExecutionStateTest {
         return stepExecutionState;
     }
 
+    @Test
+    public void testGetResolvedScenarioState() {
+        Assert.assertEquals("{\n  ${STEP_REQUEST_RESPONSE_SECTION}\n}",
+                scenarioExecutionState.getScenarioStateTemplate());
+    }
 
+    @Test
+    public void testGetStepStates() {
+        Assert.assertTrue(scenarioExecutionState.getAllSteps().isEmpty());
+    }
+
+    @Test
+    public void testGetMissingExecutedStep() {
+        Assert.assertFalse(scenarioExecutionState.getExecutedStepState("foo").isPresent());
+    }
+
+    @Test
+    public void setScenarioStateTemplate() {
+        final String loremIpsum = "Lorem ipsum dolor sit amet";
+        Assert.assertNotEquals(loremIpsum, scenarioExecutionState.getScenarioStateTemplate());
+        scenarioExecutionState.setScenarioStateTemplate(loremIpsum);
+        Assert.assertEquals(loremIpsum, scenarioExecutionState.getScenarioStateTemplate());
+    }
 }

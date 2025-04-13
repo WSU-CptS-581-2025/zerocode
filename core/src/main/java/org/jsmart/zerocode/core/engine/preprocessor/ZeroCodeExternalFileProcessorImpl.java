@@ -13,7 +13,6 @@ import java.util.Map;
 
 import com.google.inject.name.Named;
 import org.jsmart.zerocode.core.domain.Step;
-import org.jsmart.zerocode.core.utils.SmartUtils;
 import org.slf4j.Logger;
 
 import static org.jsmart.zerocode.core.engine.tokens.ZeroCodeValueTokens.JSON_PAYLOAD_FILE;
@@ -22,7 +21,6 @@ import static org.jsmart.zerocode.core.utils.SmartUtils.readJsonAsString;
 import static org.jsmart.zerocode.core.utils.SmartUtils.readYamlAsString;
 import static org.jsmart.zerocode.core.utils.SmartUtils.checkDigNeeded;
 import static org.jsmart.zerocode.core.utils.SmartUtils.getJsonFilePhToken;
-import static org.jsmart.zerocode.core.utils.TokenUtils.getTestCaseTokens;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -100,23 +98,17 @@ public class ZeroCodeExternalFileProcessorImpl implements ZeroCodeExternalFilePr
     @Override
     public List<Step> createFromStepFile(Step thisStep, String stepId) {
         List<Step> thisSteps = new ArrayList<>();
-        if (thisStep.getStepFile() != null) {
-            try {
+        try {
+            if (thisStep.getStepFile() != null) {
                 thisSteps.add(objectMapper.treeToValue(thisStep.getStepFile(), Step.class));
-            } catch (JsonProcessingException e) {
-                LOGGER.error("\n### Error while parsing for stepId - {}, stepFile - {}",
-                        stepId, thisStep.getStepFile());
-                throw new RuntimeException(e);
-            }
-        } else if(null != thisStep.getStepFiles() && !thisStep.getStepFiles().isEmpty()) {
-            try {
+            } else if(null != thisStep.getStepFiles() && !thisStep.getStepFiles().isEmpty()) {
                 for(int i = 0; i < thisStep.getStepFiles().size(); i++)
                     thisSteps.add(objectMapper.treeToValue(thisStep.getStepFiles().get(i), Step.class));
-            } catch (JsonProcessingException e) {
-                LOGGER.error("\n### Error while parsing for stepId - {}, stepFile - {}",
-                        stepId, thisStep.getStepFiles());
-                throw new RuntimeException(e);
             }
+        } catch (JsonProcessingException e) {
+            LOGGER.error("\n### Error while parsing for stepId - {}, stepFile - {}",
+                    stepId, thisStep.getStepFiles());
+            throw new RuntimeException(e);
         }
         return thisSteps;
     }
@@ -127,6 +119,7 @@ public class ZeroCodeExternalFileProcessorImpl implements ZeroCodeExternalFilePr
      *
      * @param map A map representing the key-value pairs, can be nested
      */
+    @SuppressWarnings("unchecked")
     void digReplaceContent(Map<String, Object> map) {
 
         map.entrySet().stream().forEach(entry -> {
@@ -134,7 +127,7 @@ public class ZeroCodeExternalFileProcessorImpl implements ZeroCodeExternalFilePr
             Object value = entry.getValue();
 
             if (value instanceof Map) {
-                digReplaceContent((Map<String, Object>) value);
+                digReplaceContent((Map<String, Object>)value);
 
             } else {
                 LOGGER.debug("Leaf node found = {}, checking for any external json file...", value);

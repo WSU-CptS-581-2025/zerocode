@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 import static org.jsmart.zerocode.core.constants.ZerocodeConstants.DSL_FORMAT;
@@ -45,7 +46,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  * For "parameterized" case, ${0} will resolve to 200, "Hello", true respectively for each run.
  *
  * For "parameterizedCsv" case, ${0}, ${1}, ${2} will resolve to "1", "2", "200" for the first run.
- * Then it will resolve to "11",  "22", "400" for the 2nd run ans so on.
+ * Then it will resolve to "11",  "22", "400" for the 2nd run and so on.
  */
 @Singleton
 public class ZeroCodeParameterizedProcessorImpl implements ZeroCodeParameterizedProcessor {
@@ -90,7 +91,7 @@ public class ZeroCodeParameterizedProcessorImpl implements ZeroCodeParameterized
             String stepJson = objectMapper.writeValueAsString(scenario);
             List<Object> parameterized = scenario.getParameterized().getValueSource();
 
-            if (parameterized == null || parameterized.isEmpty()) {
+            if (Optional.ofNullable(parameterized).map(List::isEmpty).orElse(true)) {
                 return scenario;
             }
 
@@ -112,7 +113,7 @@ public class ZeroCodeParameterizedProcessorImpl implements ZeroCodeParameterized
             String stepJson = objectMapper.writeValueAsString(scenario);
             List<String> parameterizedCsvList = scenario.getParameterized().getCsvSource();
 
-            if (parameterizedCsvList == null || parameterizedCsvList.isEmpty()) {
+            if (Optional.ofNullable(parameterizedCsvList).map(List::isEmpty).orElse(true)) {
                 return scenario;
             }
 
@@ -136,18 +137,18 @@ public class ZeroCodeParameterizedProcessorImpl implements ZeroCodeParameterized
     private String[] retrieveCsvHeaders(String csvHeaderLine) {
         String[] parsedHeaderLine = csvParser.parseLine(csvHeaderLine + LINE_SEPARATOR);
         boolean hasHeader = parsedHeaderLine.length > 0 && Arrays.stream(parsedHeaderLine).allMatch(s -> s.matches("^\\|.*\\|$"));
-        return !hasHeader ? null : Arrays.stream(parsedHeaderLine).map(s -> s.substring(1,s.length()-1)).toArray(String[]::new);
+        return hasHeader ? Arrays.stream(parsedHeaderLine).map(s -> s.substring(1, s.length() - 1)).toArray(String[]::new) : null;
     }
 
     private Map<String, Object> resolveCsvLine(String csvLine, String[] headers) {
-        Map<String, Object> valuesMap = new HashMap<>();
         String[] parsedLine = csvParser.parseLine(csvLine + LINE_SEPARATOR);
+        Map<String, Object> valuesMap = new HashMap<>(parsedLine.length);
         IntStream.range(0, parsedLine.length).forEach(i -> valuesMap.put(i + "", parsedLine[i]));
 
         if (headers != null){
             IntStream.range(0, headers.length).forEach(i -> {
                 if(!headers[i].contains(" ") && !headers[i].isEmpty()){
-                    valuesMap.put("PARAM."+headers[i], TokenUtils.resolveKnownTokens(parsedLine[i]).toString());
+                    valuesMap.put("PARAM."+headers[i], TokenUtils.resolveKnownTokens(parsedLine[i])); // .toString());
                 }
             });
         }
@@ -158,5 +159,4 @@ public class ZeroCodeParameterizedProcessorImpl implements ZeroCodeParameterized
         StringSubstitutor sub = new StringSubstitutor(valuesMap);
         return sub.replace(stepJson);
     }
-
 }

@@ -1,32 +1,22 @@
 package org.jsmart.zerocode.core.runner;
 
-import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.google.inject.util.Modules;
 import java.lang.annotation.Annotation;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.jsmart.zerocode.core.di.main.ApplicationMainModule;
-import org.jsmart.zerocode.core.di.module.RuntimeHttpClientModule;
-import org.jsmart.zerocode.core.di.module.RuntimeKafkaClientModule;
+
 import org.jsmart.zerocode.core.domain.HostProperties;
 import org.jsmart.zerocode.core.domain.JsonTestCase;
 import org.jsmart.zerocode.core.domain.Scenario;
 import org.jsmart.zerocode.core.domain.ScenarioSpec;
-import org.jsmart.zerocode.core.domain.TargetEnv;
-import org.jsmart.zerocode.core.domain.UseHttpClient;
-import org.jsmart.zerocode.core.domain.UseKafkaClient;
 import org.jsmart.zerocode.core.domain.builders.ZeroCodeExecReportBuilder;
 import org.jsmart.zerocode.core.domain.builders.ZeroCodeIoWriteBuilder;
 import org.jsmart.zerocode.core.engine.listener.TestUtilityListener;
-import org.jsmart.zerocode.core.httpclient.BasicHttpClient;
-import org.jsmart.zerocode.core.httpclient.ssl.SslTrustHttpClient;
-import org.jsmart.zerocode.core.kafka.client.BasicKafkaClient;
-import org.jsmart.zerocode.core.kafka.client.ZerocodeCustomKafkaClient;
 import org.jsmart.zerocode.core.logbuilder.ZerocodeCorrelationshipLogger;
 import org.jsmart.zerocode.core.report.ZeroCodeReportGenerator;
+import org.jsmart.zerocode.core.utils.RunnerUtils;
 import org.jsmart.zerocode.core.utils.SmartUtils;
 import org.junit.internal.AssumptionViolatedException;
 import org.junit.internal.runners.model.EachTestNotifier;
@@ -45,14 +35,13 @@ import static java.lang.System.getProperty;
 import static org.jsmart.zerocode.core.constants.ZeroCodeReportConstants.CHARTS_AND_CSV;
 import static org.jsmart.zerocode.core.constants.ZeroCodeReportConstants.ZEROCODE_JUNIT;
 import static org.jsmart.zerocode.core.domain.builders.ZeroCodeExecReportBuilder.newInstance;
-import static org.jsmart.zerocode.core.utils.RunnerUtils.getEnvSpecificConfigFile;
 import static org.jsmart.zerocode.core.utils.RunnerUtils.handleTestCompleted;
 
 public class ZeroCodeUnitRunner extends BlockJUnit4ClassRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(ZeroCodeUnitRunner.class);
 
     private ZeroCodeMultiStepsScenarioRunner zeroCodeMultiStepsScenarioRunner;
-    private final Class<?> testClass;
+    protected final Class<?> testClass;
     private Injector injector;
     private SmartUtils smartUtils;
     private HostProperties hostProperties;
@@ -144,48 +133,8 @@ public class ZeroCodeUnitRunner extends BlockJUnit4ClassRunner {
     }
 
     private ZeroCodeMultiStepsScenarioRunner getInjectedMultiStepsRunner() {
-        zeroCodeMultiStepsScenarioRunner = getMainModuleInjector().getInstance(ZeroCodeMultiStepsScenarioRunner.class);
+        zeroCodeMultiStepsScenarioRunner = RunnerUtils.getMainModuleInjector(testClass).getInstance(ZeroCodeMultiStepsScenarioRunner.class);
         return zeroCodeMultiStepsScenarioRunner;
-    }
-
-    public Injector getMainModuleInjector() {
-        // Synchronise this with an object lock e.g. synchronized (ZeroCodeUnitRunner.class) {}
-        synchronized (this) {
-            final TargetEnv envAnnotation = testClass.getAnnotation(TargetEnv.class);
-            String serverEnv = envAnnotation != null ? envAnnotation.value() : "config_hosts.properties";
-
-            serverEnv = getEnvSpecificConfigFile(serverEnv, testClass);
-
-            Class<? extends BasicHttpClient> runtimeHttpClient = createCustomHttpClientOrDefault();
-            Class<? extends BasicKafkaClient> runtimeKafkaClient = createCustomKafkaClientOrDefault();
-
-            injector = Guice.createInjector(Modules.override(new ApplicationMainModule(serverEnv))
-                    .with(
-                            new RuntimeHttpClientModule(runtimeHttpClient),
-                            new RuntimeKafkaClientModule(runtimeKafkaClient)
-                    )
-            );
-
-            return injector;
-        }
-    }
-
-    public Class<? extends BasicKafkaClient> createCustomKafkaClientOrDefault() {
-        final UseKafkaClient kafkaClientAnnotated = getUseKafkaClient();
-        return kafkaClientAnnotated != null ? kafkaClientAnnotated.value() : ZerocodeCustomKafkaClient.class;
-    }
-
-    public Class<? extends BasicHttpClient> createCustomHttpClientOrDefault() {
-        final UseHttpClient httpClientAnnotated = getUseHttpClient();
-        return httpClientAnnotated != null ? httpClientAnnotated.value() : SslTrustHttpClient.class;
-    }
-
-    public UseHttpClient getUseHttpClient() {
-        return testClass.getAnnotation(UseHttpClient.class);
-    }
-
-    public UseKafkaClient getUseKafkaClient() {
-        return testClass.getAnnotation(UseKafkaClient.class);
     }
 
     /**
@@ -194,15 +143,15 @@ public class ZeroCodeUnitRunner extends BlockJUnit4ClassRunner {
      * @return An instance of the Junit RunListener
      */
     protected RunListener createTestUtilityListener() {
-        return getMainModuleInjector().getInstance(TestUtilityListener.class);
+        return RunnerUtils.getMainModuleInjector(testClass).getInstance(TestUtilityListener.class);
     }
 
     protected SmartUtils getInjectedSmartUtilsClass() {
-        return getMainModuleInjector().getInstance(SmartUtils.class);
+        return RunnerUtils.getMainModuleInjector(testClass).getInstance(SmartUtils.class);
     }
 
     protected ZeroCodeReportGenerator getInjectedReportGenerator() {
-        return getMainModuleInjector().getInstance(ZeroCodeReportGenerator.class);
+        return RunnerUtils.getMainModuleInjector(testClass).getInstance(ZeroCodeReportGenerator.class);
     }
 
     private void runLeafJsonTest(RunNotifier notifier, Description description, JsonTestCase jsonTestCaseAnno) {

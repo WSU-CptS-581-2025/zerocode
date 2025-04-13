@@ -43,7 +43,9 @@ public class FileUploadUtils {
 
     public static void buildAllFilesToUpload(List<String> fileFiledsList, MultipartEntityBuilder multipartEntityBuilder) {
         fileFiledsList.forEach(fileField -> {
-            String[] fieldNameValue = fileField.split(":");
+
+            String[] fieldNameValue = parseFieldAndPath(fileField);
+            // String[] fieldNameValue = fileField.split(":");
             String fieldName = fieldNameValue[0];
             String fileNameWithPath = fieldNameValue[1].trim();
 
@@ -52,13 +54,27 @@ public class FileUploadUtils {
         });
     }
 
+    private static String[] parseFieldAndPath(String fileField) {
+        String[] parts = fileField.split(":");
+        if (parts.length != 2) {
+            throw new IllegalArgumentException("Invalid file field format, expected 'fieldName:filePath'. Found: " + fileField);
+        }
+        return parts;
+    }
     public static void buildOtherRequestParams(Map<String, Object> fileFieldNameValueMap, MultipartEntityBuilder multipartEntityBuilder) {
         for (Map.Entry<String, Object> entry : fileFieldNameValueMap.entrySet()) {
-            if (entry.getKey().equals(FILES_FIELD) || entry.getKey().equals(BOUNDARY_FIELD)) {
+            // if (entry.getKey().equals(FILES_FIELD) || entry.getKey().equals(BOUNDARY_FIELD)) {
+            //     continue;
+            // }
+            if (isReservedKey(entry.getKey())) {
                 continue;
             }
             multipartEntityBuilder.addPart(entry.getKey(), new StringBody(entry.getValue().toString(), TEXT_PLAIN));
         }
+    }
+
+    public static boolean isReservedKey(String key) {
+        return FILES_FIELD.equals(key) || BOUNDARY_FIELD.equals(key);
     }
 
     public static Map<String, Object> getFileFieldNameValue(String reqBodyAsString) throws IOException {

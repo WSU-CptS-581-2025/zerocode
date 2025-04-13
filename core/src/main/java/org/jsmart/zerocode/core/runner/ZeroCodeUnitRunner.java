@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
 import org.jsmart.zerocode.core.domain.HostProperties;
 import org.jsmart.zerocode.core.domain.JsonTestCase;
 import org.jsmart.zerocode.core.domain.Scenario;
@@ -40,7 +41,8 @@ public class ZeroCodeUnitRunner extends BlockJUnit4ClassRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(ZeroCodeUnitRunner.class);
 
     private ZeroCodeMultiStepsScenarioRunner zeroCodeMultiStepsScenarioRunner;
-    private final Class<?> testClass;
+    protected final Class<?> testClass;
+    private Injector injector;
     private SmartUtils smartUtils;
     private HostProperties hostProperties;
     private String host;
@@ -131,8 +133,8 @@ public class ZeroCodeUnitRunner extends BlockJUnit4ClassRunner {
     }
 
     private ZeroCodeMultiStepsScenarioRunner getInjectedMultiStepsRunner() {
-        zeroCodeMultiStepsScenarioRunner = RunnerUtils.getMainModuleInjectorSyncronized(ZeroCodeMultiStepsScenarioRunner.class)
-            .getInstance(ZeroCodeMultiStepsScenarioRunner.class);
+        zeroCodeMultiStepsScenarioRunner = RunnerUtils.getMainModuleInjector(testClass).getInstance(ZeroCodeMultiStepsScenarioRunner.class);
+        //getMainModuleInjector().getInstance(ZeroCodeMultiStepsScenarioRunner.class);
         return zeroCodeMultiStepsScenarioRunner;
     }
 
@@ -142,18 +144,15 @@ public class ZeroCodeUnitRunner extends BlockJUnit4ClassRunner {
      * @return An instance of the Junit RunListener
      */
     protected RunListener createTestUtilityListener() {
-        return RunnerUtils.getMainModuleInjectorSyncronized(TestUtilityListener.class)
-            .getInstance(TestUtilityListener.class);
+        return RunnerUtils.getMainModuleInjector(testClass).getInstance(TestUtilityListener.class);
     }
 
     protected SmartUtils getInjectedSmartUtilsClass() {
-        return RunnerUtils.getMainModuleInjectorSyncronized(SmartUtils.class)
-            .getInstance(SmartUtils.class);
+        return RunnerUtils.getMainModuleInjector(testClass).getInstance(SmartUtils.class);
     }
 
     protected ZeroCodeReportGenerator getInjectedReportGenerator() {
-        return RunnerUtils.getMainModuleInjectorSyncronized(ZeroCodeReportGenerator.class)
-            .getInstance(ZeroCodeReportGenerator.class);
+        return RunnerUtils.getMainModuleInjector(testClass).getInstance(ZeroCodeReportGenerator.class);
     }
 
     private void runLeafJsonTest(RunNotifier notifier, Description description, JsonTestCase jsonTestCaseAnno) {

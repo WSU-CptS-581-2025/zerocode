@@ -8,7 +8,6 @@ import org.jsmart.zerocode.core.di.main.ApplicationMainModule;
 import org.jsmart.zerocode.core.di.module.RuntimeHttpClientModule;
 import org.jsmart.zerocode.core.di.module.RuntimeKafkaClientModule;
 import org.jsmart.zerocode.core.domain.EnvProperty;
-import org.jsmart.zerocode.core.domain.Parameterized;
 import org.jsmart.zerocode.core.domain.Step;
 import org.jsmart.zerocode.core.domain.TargetEnv;
 import org.jsmart.zerocode.core.domain.TestMapping;
@@ -176,26 +175,24 @@ public class RunnerUtils {
     }
 
     public static Injector getMainModuleInjector(Class<?> testClass) {
-        //TODO: Synchronise this with e.g. synchronized (ZeroCodePackageRunner.class) {}
-        final TargetEnv envAnnotation = testClass.getAnnotation(TargetEnv.class);
-        String serverEnv = envAnnotation != null ? envAnnotation.value() : "config_hosts.properties";
-
-        serverEnv = getEnvSpecificConfigFile(serverEnv, testClass);
-
-        Class<? extends BasicHttpClient> runtimeHttpClient = createCustomHttpClientOrDefault(testClass);
-        Class<? extends BasicKafkaClient> runtimeKafkaClient = createCustomKafkaClientOrDefault(testClass);
-
-        return Guice.createInjector(Modules.override(new ApplicationMainModule(serverEnv))
-            .with(
-                    new RuntimeHttpClientModule(runtimeHttpClient),
-                    new RuntimeKafkaClientModule(runtimeKafkaClient)
-            ));
-    }
-
-    public static Injector getMainModuleInjectorSyncronized(Class<?> testClass) {
-        // Synchronise this with an object lock e.g. synchronized (ZeroCodeUnitRunner.class) {}
-        synchronized (Thread.currentThread().getStackTrace()) {
-            return getMainModuleInjector(testClass);
+        synchronized (testClass) {
+            // Retrieve the TargetEnv annotation
+            final TargetEnv envAnnotation = testClass.getAnnotation(TargetEnv.class);
+            String serverEnv = envAnnotation != null ? envAnnotation.value() : "config_hosts.properties";
+    
+            // Resolve environment-specific configuration file
+            serverEnv = getEnvSpecificConfigFile(serverEnv, testClass);
+    
+            // Determine the runtime HTTP and Kafka clients
+            Class<? extends BasicHttpClient> runtimeHttpClient = createCustomHttpClientOrDefault(testClass);
+            Class<? extends BasicKafkaClient> runtimeKafkaClient = createCustomKafkaClientOrDefault(testClass);
+    
+            // Create and return the Guice injector
+            return Guice.createInjector(Modules.override(new ApplicationMainModule(serverEnv))
+                .with(
+                        new RuntimeHttpClientModule(runtimeHttpClient),
+                        new RuntimeKafkaClientModule(runtimeKafkaClient)
+                ));
         }
     }
 }

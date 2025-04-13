@@ -281,7 +281,7 @@ public class ZeroCodeAssertionsProcessorImpl implements ZeroCodeAssertionsProces
         return resultMap;
     }
 
-    private Object convertJsonTypeToJavaType(JsonNode jsonNode) {
+    protected Object convertJsonTypeToJavaType(JsonNode jsonNode) {
         if (jsonNode.isValueNode()) {
             if (jsonNode.getNodeType().equals(JsonNodeType.NUMBER)) {
                 if (jsonNode.isInt()) {
@@ -442,7 +442,7 @@ public class ZeroCodeAssertionsProcessorImpl implements ZeroCodeAssertionsProces
         map.entrySet().forEach(entry -> processEntry(entry, scenarioExecutionState));
     }
 
-    private void processLeaf(Map.Entry<String, Object> entry, Object value,
+    protected void processLeaf(Map.Entry<String, Object> entry, Object value,
                              ScenarioExecutionState scenarioExecutionState) {
         LOGGER.debug("Leaf node found = {}, checking for any json content...", value);
         if (value != null && (value.toString().contains(JSON_CONTENT))) {
@@ -483,7 +483,7 @@ public class ZeroCodeAssertionsProcessorImpl implements ZeroCodeAssertionsProces
         }
     }
 
-    private JsonAsserter getPathSizeAsserter(String path, Object value) {
+    protected JsonAsserter getPathSizeAsserter(String path, Object value) {
         if (value instanceof Number) {
             return new ArraySizeAsserterImpl(path, (Integer) value);
         } else if (value instanceof String) {
@@ -493,7 +493,7 @@ public class ZeroCodeAssertionsProcessorImpl implements ZeroCodeAssertionsProces
         }
     }
 
-    private JsonAsserter getStringAsserter(Object value, String path) {
+    protected JsonAsserter getStringAsserter(Object value, String path) {
         String expected, valueString;
         valueString = Objects.requireNonNull(value).toString();
         Map<String, BiFunction<String, String, JsonAsserter>> tokenToStringMethodMap = new HashMap<>();
@@ -511,7 +511,7 @@ public class ZeroCodeAssertionsProcessorImpl implements ZeroCodeAssertionsProces
         }
         return getNumberAsserter(value, path);
     }
-    private JsonAsserter getNumberAsserter(Object value, String path) {
+    protected JsonAsserter getNumberAsserter(Object value, String path) {
         String expected, valueString;
         valueString = value.toString();
         Map<String, BiFunction<String, Number, JsonAsserter>> tokenToNumberMethodMap = new HashMap<>();
@@ -527,7 +527,7 @@ public class ZeroCodeAssertionsProcessorImpl implements ZeroCodeAssertionsProces
         }
         return getDateTimeAsserter(value, path);
     }
-    private JsonAsserter getDateTimeAsserter(Object value, String path) {
+    protected JsonAsserter getDateTimeAsserter(Object value, String path) {
         String expected, valueString;
         valueString = value.toString();
         Map<String, BiFunction<String, LocalDateTime, JsonAsserter>> tokenToDateTimeMethodMap = new HashMap<>();
@@ -542,7 +542,7 @@ public class ZeroCodeAssertionsProcessorImpl implements ZeroCodeAssertionsProces
         return new FieldHasExactValueAsserter(path, value);
     }
 
-    private JsonAsserter getNullOrEmptyAsserter(Object value, String path) {
+    protected JsonAsserter getNullOrEmptyAsserter(Object value, String path) {
         Map<String, Function<String, JsonAsserter>> nullEmptyAsserters = new HashMap<>();
         nullEmptyAsserters.put(ASSERT_VALUE_NOT_NULL, FieldIsNotNullAsserter::new);
         nullEmptyAsserters.put(ASSERT_VALUE_IS_NOT_NULL, FieldIsNotNullAsserter::new);

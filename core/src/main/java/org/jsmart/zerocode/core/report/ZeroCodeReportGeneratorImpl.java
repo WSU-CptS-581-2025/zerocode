@@ -83,6 +83,10 @@ public class ZeroCodeReportGeneratorImpl implements ZeroCodeReportGenerator {
         return new ArrayList<>(result.values());
     }
 
+    /**
+     * Generates the Extent report. It creates a new ExtentReports object and processes each report
+     * in the treeReports list to generate the report.
+     */
     @Override
     public void generateExtentReport() {
 
@@ -95,57 +99,107 @@ public class ZeroCodeReportGeneratorImpl implements ZeroCodeReportGenerator {
         linkToSpikeChartIfEnabled();
 
         treeReports.forEach(thisReport -> {
+            processReport(thisReport, extentReports);
+        });
+    }
 
-            thisReport.getResults().forEach(thisScenario -> {
-                ExtentTest test = extentReports.createTest(thisScenario.getScenarioName());
+    /**
+     * Processes the report and generates the Extent report. See referenced functions for detailed steps.
+     *
+     * @param report        The ZeroCodeReport object representing the test report.
+     * @param extentReports The ExtentReports object used to generate the report.
+     */
+    protected void processReport(ZeroCodeReport report, ExtentReports extentReports) {
+        report.getResults().forEach(thisScenario -> {
+            ExtentTest test = extentReports.createTest(thisScenario.getScenarioName());
 
-                 /**This code checks if the scenario has meta data.
-                 If it does, it iterates through each meta data entry and adds it to
-                 the Extent report as an info label.**/
-                if (thisScenario.getMeta() != null) {
-                    for (Map.Entry<String, List<String>> entry : thisScenario.getMeta().entrySet()) {
-                        String key = entry.getKey();
-                        List<String> values = entry.getValue();
-                        test.info(MarkupHelper.createLabel(key + ": " + String.join(", ", values), ExtentColor.BLUE));
-                    }
-                }
+            // Processes any metadata if present
+            processMetaData(test, thisScenario);
 
-                // Assign Category
-                test.assignCategory(DEFAULT_REGRESSION_CATEGORY); //Super set
-                String[] hashTagsArray = optionalCategories(thisScenario.getScenarioName()).toArray(new String[0]);
-                if(hashTagsArray.length > 0) {
-                    test.assignCategory(hashTagsArray); //Sub categories
-                }
+            // Assign Category
+            assignCategory(test, thisScenario);
 
-                // Assign Authors
-                test.assignAuthor(DEFAULT_REGRESSION_AUTHOR); //Super set
-                String[] authorsArray = optionalAuthors(thisScenario.getScenarioName()).toArray(new String[0]);
-                if(authorsArray.length > 0) {
-                    test.assignAuthor(authorsArray); //Sub authors
-                }
+            // Assign Authors
+            assignAuthors(test, thisScenario);
 
-                List<ZeroCodeReportStep> thisScenarioUniqueSteps = getUniqueSteps(thisScenario.getSteps());
-                thisScenarioUniqueSteps.forEach(thisStep -> {
-                    test.getModel().setStartTime(utilDateOf(thisStep.getRequestTimeStamp()));
-                    test.getModel().setEndTime(utilDateOf(thisStep.getResponseTimeStamp()));
+            // Extract the individual test steps
+            extractSteps(test, thisScenario, extentReports);
+        });
+    }
 
-                    final Status testStatus = thisStep.getResult().equals(RESULT_PASS) ? Status.PASS : Status.FAIL;
+    /**
+     * Processes the metadata of a scenario and adds it to the Extent report.
+     * @param test
+     * @param scenario
+     */
+    protected void processMetaData(ExtentTest test, ZeroCodeExecResult scenario) {
+        /**This code checks if the scenario has meta data.
+             If it does, it iterates through each meta data entry and adds it to
+             the Extent report as an info label.**/
+        if (scenario.getMeta() != null) {
+            for (Map.Entry<String, List<String>> entry : scenario.getMeta().entrySet()) {
+                String key = entry.getKey();
+                List<String> values = entry.getValue();
+                test.info(MarkupHelper.createLabel(key + ": " + String.join(", ", values), ExtentColor.BLUE));
+            }
+        }
+    }
 
-                    ExtentTest step = test.createNode(thisStep.getName(), TEST_STEP_CORRELATION_ID + " " + thisStep.getCorrelationId());
+    /**
+     * Assigns categories to the test case in the Extent report.
+     * @param test
+     * @param scenario
+     */
+    protected void assignCategory(ExtentTest test, ZeroCodeExecResult scenario) {
+        // Assign Category
+        test.assignCategory(DEFAULT_REGRESSION_CATEGORY); //Super set
+        String[] hashTagsArray = optionalCategories(scenario.getScenarioName()).toArray(new String[0]);
+        if(hashTagsArray.length > 0) {
+            test.assignCategory(hashTagsArray); //Sub categories
+        }
+    }
 
-                    if (testStatus.equals(Status.PASS)) {
-                        step.pass(thisStep.getResult());
-                    } else {
-                        step.info(MarkupHelper.createCodeBlock(thisStep.getOperation() + "\t" + thisStep.getUrl()));
-                        step.info(MarkupHelper.createCodeBlock(thisStep.getRequest(), CodeLanguage.JSON));
-                        step.info(MarkupHelper.createCodeBlock(thisStep.getResponse(), CodeLanguage.JSON));
-                        step.fail(MarkupHelper.createCodeBlock("Reason:\n" + thisStep.getAssertions()));
-                    }
-                    extentReports.flush();
-                });
+    /**
+     * Assigns authors to the test case in the Extent report.
+     * @param test
+     * @param scenario
+     */
+    protected void assignAuthors(ExtentTest test, ZeroCodeExecResult scenario) {
+        // Assign Authors
+        test.assignAuthor(DEFAULT_REGRESSION_AUTHOR); //Super set
+        String[] authorsArray = optionalAuthors(scenario.getScenarioName()).toArray(new String[0]);
+        if(authorsArray.length > 0) {
+            test.assignAuthor(authorsArray); //Sub authors
+        }
+    }
 
-            });
+    /**
+     * Extracts the steps from the scenario and creates a node for each step in the Extent report.
+     * It also sets the start and end time for each step based on the request and response timestamps.
+     *
+     * @param test              The ExtentTest object representing the test case.
+     * @param scenario          The ZeroCodeExecResult object representing the scenario.
+     * @param extentReports     The ExtentReports object used to generate the report.
+     */
+    protected void extractSteps(ExtentTest test, ZeroCodeExecResult scenario, ExtentReports extentReports) {
+        List<ZeroCodeReportStep> thisScenarioUniqueSteps = getUniqueSteps(scenario.getSteps());
+        thisScenarioUniqueSteps.forEach(thisStep -> {
+            test.getModel().setStartTime(utilDateOf(thisStep.getRequestTimeStamp()));
+            test.getModel().setEndTime(utilDateOf(thisStep.getResponseTimeStamp()));
 
+            final Status testStatus = thisStep.getResult().equals(RESULT_PASS) ? Status.PASS : Status.FAIL;
+
+            ExtentTest step = test.createNode(thisStep.getName(), TEST_STEP_CORRELATION_ID + " " + thisStep.getCorrelationId());
+
+            if (testStatus.equals(Status.PASS)) {
+                step.pass(thisStep.getResult());
+            } else {
+                step.info(MarkupHelper.createCodeBlock(thisStep.getOperation() + "\t" + thisStep.getUrl()));
+                step.info(MarkupHelper.createCodeBlock(thisStep.getRequest(), CodeLanguage.JSON));
+                step.info(MarkupHelper.createCodeBlock(thisStep.getResponse(), CodeLanguage.JSON));
+                step.fail(MarkupHelper.createCodeBlock("Reason:\n" + thisStep.getAssertions()));
+            }
+            extentReports.flush();
         });
     }
 

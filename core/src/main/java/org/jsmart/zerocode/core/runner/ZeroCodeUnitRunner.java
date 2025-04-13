@@ -134,7 +134,6 @@ public class ZeroCodeUnitRunner extends BlockJUnit4ClassRunner {
 
     private ZeroCodeMultiStepsScenarioRunner getInjectedMultiStepsRunner() {
         zeroCodeMultiStepsScenarioRunner = RunnerUtils.getMainModuleInjector(testClass).getInstance(ZeroCodeMultiStepsScenarioRunner.class);
-        //getMainModuleInjector().getInstance(ZeroCodeMultiStepsScenarioRunner.class);
         return zeroCodeMultiStepsScenarioRunner;
     }
 

@@ -23,6 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1588,5 +1589,14 @@ public class ZeroCodeAssertionsProcessorImplTest {
                 body +
                 "}");
         return stepExecutionState;
+    }
+
+    @Test
+    public void getPathSizeAsserterInvalidTypeTest() {
+        Object value = LocalDateTime.now();
+        String path = "$.foo.SIZE";
+        Assert.assertThrows(String.format("Oops! Unsupported value for .SIZE: %s", value),
+                RuntimeException.class,
+                () -> jsonPreProcessor.getPathSizeAsserter(path, value));
     }
 }

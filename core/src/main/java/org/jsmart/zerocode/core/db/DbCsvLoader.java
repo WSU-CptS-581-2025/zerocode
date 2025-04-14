@@ -20,6 +20,7 @@ import com.univocity.parsers.csv.CsvParser;
 public class DbCsvLoader {
     private static final Logger LOGGER = LoggerFactory.getLogger(DbCsvLoader.class);
 
+
     private final Connection conn;
     private final CsvParser csvParser;
 

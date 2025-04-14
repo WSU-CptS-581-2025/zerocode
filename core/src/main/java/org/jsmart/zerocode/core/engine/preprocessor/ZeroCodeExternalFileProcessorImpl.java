@@ -98,16 +98,19 @@ public class ZeroCodeExternalFileProcessorImpl implements ZeroCodeExternalFilePr
     @Override
     public List<Step> createFromStepFile(Step thisStep, String stepId) {
         List<Step> thisSteps = new ArrayList<>();
+        String branch;
         try {
             if (thisStep.getStepFile() != null) {
+                branch = "A";
                 thisSteps.add(objectMapper.treeToValue(thisStep.getStepFile(), Step.class));
             } else if(null != thisStep.getStepFiles() && !thisStep.getStepFiles().isEmpty()) {
+                branch = "B";
                 for(int i = 0; i < thisStep.getStepFiles().size(); i++)
                     thisSteps.add(objectMapper.treeToValue(thisStep.getStepFiles().get(i), Step.class));
             }
         } catch (JsonProcessingException e) {
-            LOGGER.error("\n### Error while parsing for stepId - {}, stepFile - {}",
-                    stepId, thisStep.getStepFiles());
+            LOGGER.error("\n### Error while parsing for stepId - {}, stepFile - {}, branch - {}",
+                    stepId, thisStep.getStepFiles(), branch);
             throw new RuntimeException(e);
         }
         return thisSteps;

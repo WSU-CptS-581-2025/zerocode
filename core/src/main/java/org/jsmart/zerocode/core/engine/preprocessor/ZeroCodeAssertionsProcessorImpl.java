@@ -28,6 +28,7 @@ import org.jsmart.zerocode.core.engine.assertion.field.FieldIsNullAsserter;
 import org.jsmart.zerocode.core.engine.assertion.field.FieldIsOneOfValueAsserter;
 import org.jsmart.zerocode.core.engine.assertion.field.FieldMatchesCustomAsserter;
 import org.jsmart.zerocode.core.engine.assertion.field.FieldMatchesRegexPatternAsserter;
+import org.jsmart.zerocode.core.utils.SmartUtils;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -39,7 +40,12 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+
 import static java.lang.String.format;
 import static org.apache.commons.text.StringEscapeUtils.escapeJava;
 import static org.apache.commons.lang3.StringUtils.substringBetween;
@@ -124,7 +130,7 @@ public class ZeroCodeAssertionsProcessorImpl implements ZeroCodeAssertionsProces
     public String resolveJsonPaths(String jsonString, String scenarioState) {
         List<String> jsonPaths = getAllJsonPathTokens(jsonString);
         Map<String, String> paramMap = new HashMap<>();
-        final String LEAF_VAL_REGEX = "\\$[.](.*)\\$VALUE\\[\\d\\]";
+        final String LEAF_VAL_REGEX = "\\$[.](.*)\\$VALUE\\[\\d]";
 
         jsonPaths.forEach(thisPath -> {
             try {
@@ -163,10 +169,7 @@ public class ZeroCodeAssertionsProcessorImpl implements ZeroCodeAssertionsProces
                 throw new RuntimeException("\nJSON:" + jsonString + "\nPossibly comments in the JSON found or bad JSON path found: " + thisPath + ",\nDetails: " + e);
             }
         });
-
-        StringSubstitutor sub = new StringSubstitutor(paramMap);
-
-        return sub.replace(jsonString);
+        return SmartUtils.resolveToken(jsonString, paramMap);
     }
 
     @Override
@@ -195,61 +198,14 @@ public class ZeroCodeAssertionsProcessorImpl implements ZeroCodeAssertionsProces
                 String path = entry.getKey();
                 Object value = entry.getValue();
 
-                JsonAsserter asserter;
-                if (ASSERT_VALUE_NOT_NULL.equals(value) || ASSERT_VALUE_IS_NOT_NULL.equals(value)) {
-                    asserter = new FieldIsNotNullAsserter(path);
+                JsonAsserter asserter = getNullOrEmptyAsserter(value, path);
 
-                } else if (value instanceof String && ((String) value).startsWith(ASSERT_VALUE_CUSTOM_ASSERT)) {
-                    String expected = ((String) value).substring(ASSERT_VALUE_CUSTOM_ASSERT.length());
-                    asserter = new FieldMatchesCustomAsserter(path, expected);
-
-                } else if (ASSERT_VALUE_NULL.equals(value) || ASSERT_VALUE_IS_NULL.equals(value)) {
-                    asserter = new FieldIsNullAsserter(path);
-
-                } else if (ASSERT_VALUE_EMPTY_ARRAY.equals(value)) {
-                    asserter = new ArrayIsEmptyAsserterImpl(path);
-
-                } else if (path.endsWith(ASSERT_PATH_SIZE)) {
+                if (asserter == null && path.endsWith(ASSERT_PATH_SIZE)) {
                     path = path.substring(0, path.length() - ASSERT_PATH_SIZE.length());
-                    if (value instanceof Number) {
-                        asserter = new ArraySizeAsserterImpl(path, (Integer) value);
-                    } else if (value instanceof String) {
-                        asserter = new ArraySizeAsserterImpl(path, (String) value);
-                    } else {
-                        throw new RuntimeException(format("Oops! Unsupported value for .SIZE: %s", value));
-                    }
-                } else if (value instanceof String && ((String) value).startsWith(ASSERT_VALUE_CONTAINS_STRING)) {
-                    String expected = ((String) value).substring(ASSERT_VALUE_CONTAINS_STRING.length());
-                    asserter = new FieldContainsStringAsserter(path, expected);
-                } else if (value instanceof String && ((String) value).startsWith(ASSERT_VALUE_MATCHES_STRING)) {
-                    String expected = ((String) value).substring(ASSERT_VALUE_MATCHES_STRING.length());
-                    asserter = new FieldMatchesRegexPatternAsserter(path, expected);
-                } else if (value instanceof String && ((String) value).startsWith(ASSERT_VALUE_CONTAINS_STRING_IGNORE_CASE)) {
-                    String expected = ((String) value).substring(ASSERT_VALUE_CONTAINS_STRING_IGNORE_CASE.length());
-                    asserter = new FieldContainsStringIgnoreCaseAsserter(path, expected);
-                } else if (value instanceof String && (value.toString()).startsWith(ASSERT_VALUE_EQUAL_TO_NUMBER)) {
-                    String expected = ((String) value).substring(ASSERT_VALUE_EQUAL_TO_NUMBER.length());
-                    asserter = new FieldHasEqualNumberValueAsserter(path, numberValueOf(expected));
-                } else if (value instanceof String && (value.toString()).startsWith(ASSERT_VALUE_NOT_EQUAL_TO_NUMBER)) {
-                    String expected = ((String) value).substring(ASSERT_VALUE_NOT_EQUAL_TO_NUMBER.length());
-                    asserter = new FieldHasInEqualNumberValueAsserter(path, numberValueOf(expected));
-                } else if (value instanceof String && (value.toString()).startsWith(ASSERT_VALUE_GREATER_THAN)) {
-                    String expected = ((String) value).substring(ASSERT_VALUE_GREATER_THAN.length());
-                    asserter = new FieldHasGreaterThanValueAsserter(path, numberValueOf(expected));
-                } else if (value instanceof String && (value.toString()).startsWith(ASSERT_VALUE_LESSER_THAN)) {
-                    String expected = ((String) value).substring(ASSERT_VALUE_LESSER_THAN.length());
-                    asserter = new FieldHasLesserThanValueAsserter(path, numberValueOf(expected));
-                } else if (value instanceof String && (value.toString()).startsWith(ASSERT_LOCAL_DATETIME_AFTER)) {
-                    String expected = ((String) value).substring(ASSERT_LOCAL_DATETIME_AFTER.length());
-                    asserter = new FieldHasDateAfterValueAsserter(path, parseLocalDateTime(expected));
-                } else if (value instanceof String && (value.toString()).startsWith(ASSERT_LOCAL_DATETIME_BEFORE)) {
-                    String expected = ((String) value).substring(ASSERT_LOCAL_DATETIME_BEFORE.length());
-                    asserter = new FieldHasDateBeforeValueAsserter(path, parseLocalDateTime(expected));
-                } else if (value instanceof String && (value.toString()).startsWith(ASSERT_VALUE_ONE_OF) ||
-                        value instanceof String && (value.toString()).startsWith(ASSERT_VALUE_IS_ONE_OF)) {
-                    String expected = ((String) value).substring(ASSERT_VALUE_ONE_OF.length());
-                    asserter = new FieldIsOneOfValueAsserter(path, expected);
-                } else {
+                    asserter = getPathSizeAsserter(path, value);
+                } else if (asserter == null && value instanceof String) {
+                    asserter = getStringAsserter(value, path);
+                } else if (asserter == null) {
                     asserter = new FieldHasExactValueAsserter(path, value);
                 }
 
@@ -325,22 +281,23 @@ public class ZeroCodeAssertionsProcessorImpl implements ZeroCodeAssertionsProces
         return resultMap;
     }
 
-    private Object convertJsonTypeToJavaType(JsonNode jsonNode) {
+    protected Object convertJsonTypeToJavaType(JsonNode jsonNode) {
         if (jsonNode.isValueNode()) {
-            if (jsonNode.isInt()) {
-                return jsonNode.asInt();
+            if (jsonNode.getNodeType().equals(JsonNodeType.NUMBER)) {
+                if (jsonNode.isInt()) {
+                    return jsonNode.asInt();
 
+                } else if (jsonNode.isLong()) {
+                    return jsonNode.asLong();
+
+                } else {
+                    return jsonNode.asDouble();
+                }
             } else if (jsonNode.isTextual()) {
                 return jsonNode.asText();
 
             } else if (jsonNode.isBoolean()) {
                 return jsonNode.asBoolean();
-
-            } else if (jsonNode.isLong()) {
-                return jsonNode.asLong();
-
-            } else if (jsonNode.isDouble()) {
-                return jsonNode.asDouble();
 
             } else if (jsonNode.isNull()) {
                 return null;
@@ -376,7 +333,7 @@ public class ZeroCodeAssertionsProcessorImpl implements ZeroCodeAssertionsProces
      * Resolves JSON.CONTENT as object or array
      * <p>
      * First the logic checks if dig-deep needed to avoid unwanted recursions. If not needed, the step definition is
-     * returned intact. Otherwise calls the dig deep method to perform the operation.
+     * returned intact. Otherwise, it calls the dig deep method to perform the operation.
      * <p>
      * returns: The effective step definition
      */
@@ -424,7 +381,7 @@ public class ZeroCodeAssertionsProcessorImpl implements ZeroCodeAssertionsProces
 
         } catch (Exception e) {
             String msg = "Problem encountered while accessing annotated host properties file '";
-            LOGGER.error(msg + hostFileName + "'");
+            LOGGER.error("{}{}'", msg, hostFileName);
             System.err.println(msg + hostFileName + "'");
             throw new RuntimeException(msg + e);
         }
@@ -466,57 +423,137 @@ public class ZeroCodeAssertionsProcessorImpl implements ZeroCodeAssertionsProces
                 return resolvedJson;
             }
 
-            Map<String, Object> fieldMap = mapper.readValue(resolvedJson, new TypeReference<Map<String, Object>>() {
-            });
+            Map<String, Object> fieldMap = mapper.readValue(resolvedJson, new TypeReference<Map<String, Object>>() { });
             deepTypeCast(fieldMap);
 
             return mapper.writeValueAsString(fieldMap);
 
         } catch (Exception ex) {
-            LOGGER.error("Field Type conversion exception. \nDetails:" + ex);
+            LOGGER.error("Field Type conversion exception. \nDetails: {}", ex.toString());
             throw new RuntimeException(ex);
         }
     }
 
     private boolean hasNoTypeCast(String resolvedJson) {
-        long foundCount = fieldTypes.stream().filter(resolvedJson::contains).count();
-        return foundCount <= 0;
+        return fieldTypes.stream().noneMatch(resolvedJson::contains);
     }
 
-
     void digReplaceContent(Map<String, Object> map, ScenarioExecutionState scenarioExecutionState) {
-        map.entrySet().forEach(entry -> {
-            Object value = entry.getValue();
+        map.entrySet().forEach(entry -> processEntry(entry, scenarioExecutionState));
+    }
 
-            if (value instanceof Map) {
-                digReplaceContent((Map<String, Object>) value, scenarioExecutionState);
-            } else {
-                LOGGER.debug("Leaf node found = {}, checking for any json content...", value);
-                if (value != null && (value.toString().contains(JSON_CONTENT))) {
-                    LOGGER.debug("Found JSON content place holder = {}. Replacing with content", value);
-                    String valueString = value.toString();
-                    String token = getJsonFilePhToken(valueString);
+    protected void processLeaf(Map.Entry<String, Object> entry, Object value,
+                             ScenarioExecutionState scenarioExecutionState) {
+        LOGGER.debug("Leaf node found = {}, checking for any json content...", value);
+        if (value != null && (value.toString().contains(JSON_CONTENT))) {
+            LOGGER.debug("Found JSON content place holder = {}. Replacing with content", value);
+            String valueString = value.toString();
+            String token = getJsonFilePhToken(valueString);
 
-                    if (token != null && (token.startsWith(JSON_CONTENT))) {
-                        try {
-                            String resolvedRequestJson = resolveStringJson(
-                                "${" + token.substring(JSON_CONTENT.length()) + "}",
-                                scenarioExecutionState.getResolvedScenarioState());
-                            resolvedRequestJson = resolvedRequestJson.replaceAll("\\\\", "");
-                            try {
-                                JsonNode jsonNode = mapper.readTree(resolvedRequestJson);
-                                entry.setValue(jsonNode);
-                            } catch (JsonParseException e) {
-                                //value is not a json string, but a string value
-                                entry.setValue(resolvedRequestJson);
-                            }
-                        } catch (Exception exx) {
-                            LOGGER.error("External file reference exception - {}", exx.getMessage());
-                            throw new RuntimeException(exx);
-                        }
+            if (Optional.ofNullable(token).map(t -> t.startsWith(JSON_CONTENT)).orElse(false)) {
+                try {
+                    String resolvedRequestJson = resolveStringJson(
+                            "${" + token.substring(JSON_CONTENT.length()) + "}",
+                            scenarioExecutionState.getResolvedScenarioState());
+                    resolvedRequestJson = resolvedRequestJson.replaceAll("\\\\", "");
+                    Object entryValue = null;
+                    try {
+                        entryValue = mapper.readTree(resolvedRequestJson);
+                    } catch (JsonParseException ignored) {
+                        entryValue = resolvedRequestJson;
+                    } finally {
+                        entry.setValue(entryValue);
                     }
+                } catch (Exception exx) {
+                    LOGGER.error("External file reference exception - {}", exx.getMessage());
+                    throw new RuntimeException(exx);
                 }
             }
-        });
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void processEntry(Map.Entry<String, Object> entry, ScenarioExecutionState scenarioExecutionState) {
+        Object value = entry.getValue();
+
+        if (value instanceof Map) {
+            digReplaceContent((Map<String, Object>) value, scenarioExecutionState);
+        } else {
+            processLeaf(entry, value, scenarioExecutionState);
+        }
+    }
+
+    protected JsonAsserter getPathSizeAsserter(String path, Object value) {
+        if (value instanceof Number) {
+            return new ArraySizeAsserterImpl(path, (Integer) value);
+        } else if (value instanceof String) {
+            return new ArraySizeAsserterImpl(path, (String) value);
+        } else {
+            throw new RuntimeException(format("Oops! Unsupported value for .SIZE: %s", value));
+        }
+    }
+
+    protected JsonAsserter getStringAsserter(Object value, String path) {
+        String expected, valueString;
+        valueString = Objects.requireNonNull(value).toString();
+        Map<String, BiFunction<String, String, JsonAsserter>> tokenToStringMethodMap = new HashMap<>();
+        tokenToStringMethodMap.put(ASSERT_VALUE_CONTAINS_STRING, FieldContainsStringAsserter::new);
+        tokenToStringMethodMap.put(ASSERT_VALUE_MATCHES_STRING, FieldMatchesRegexPatternAsserter::new);
+        tokenToStringMethodMap.put(ASSERT_VALUE_CONTAINS_STRING_IGNORE_CASE, FieldContainsStringIgnoreCaseAsserter::new);
+        tokenToStringMethodMap.put(ASSERT_VALUE_IS_ONE_OF, FieldIsOneOfValueAsserter::new);
+        tokenToStringMethodMap.put(ASSERT_VALUE_ONE_OF, FieldIsOneOfValueAsserter::new);
+        tokenToStringMethodMap.put(ASSERT_VALUE_CUSTOM_ASSERT, FieldMatchesCustomAsserter::new);
+        for (Map.Entry<String, BiFunction<String, String, JsonAsserter>> entry : tokenToStringMethodMap.entrySet()) {
+            if (valueString.startsWith(entry.getKey())) {
+                expected = valueString.substring(entry.getKey().length());
+                return entry.getValue().apply(path, expected);
+            }
+        }
+        return getNumberAsserter(value, path);
+    }
+    protected JsonAsserter getNumberAsserter(Object value, String path) {
+        String expected, valueString;
+        valueString = value.toString();
+        Map<String, BiFunction<String, Number, JsonAsserter>> tokenToNumberMethodMap = new HashMap<>();
+        tokenToNumberMethodMap.put(ASSERT_VALUE_EQUAL_TO_NUMBER, FieldHasEqualNumberValueAsserter::new);
+        tokenToNumberMethodMap.put(ASSERT_VALUE_NOT_EQUAL_TO_NUMBER, FieldHasInEqualNumberValueAsserter::new);
+        tokenToNumberMethodMap.put(ASSERT_VALUE_GREATER_THAN, FieldHasGreaterThanValueAsserter::new);
+        tokenToNumberMethodMap.put(ASSERT_VALUE_LESSER_THAN, FieldHasLesserThanValueAsserter::new);
+        for (Map.Entry<String, BiFunction<String, Number, JsonAsserter>> entry : tokenToNumberMethodMap.entrySet()) {
+            if (valueString.startsWith(entry.getKey())) {
+                expected = valueString.substring(entry.getKey().length());
+                return entry.getValue().apply(path, numberValueOf(expected));
+            }
+        }
+        return getDateTimeAsserter(value, path);
+    }
+    protected JsonAsserter getDateTimeAsserter(Object value, String path) {
+        String expected, valueString;
+        valueString = value.toString();
+        Map<String, BiFunction<String, LocalDateTime, JsonAsserter>> tokenToDateTimeMethodMap = new HashMap<>();
+        tokenToDateTimeMethodMap.put(ASSERT_LOCAL_DATETIME_AFTER, FieldHasDateAfterValueAsserter::new);
+        tokenToDateTimeMethodMap.put(ASSERT_LOCAL_DATETIME_BEFORE, FieldHasDateBeforeValueAsserter::new);
+        for (Map.Entry<String, BiFunction<String, LocalDateTime, JsonAsserter>> entry : tokenToDateTimeMethodMap.entrySet()) {
+            if (valueString.startsWith(entry.getKey())) {
+                expected = valueString.substring(entry.getKey().length());
+                return entry.getValue().apply(path, parseLocalDateTime(expected));
+            }
+        }
+        return new FieldHasExactValueAsserter(path, value);
+    }
+
+    protected JsonAsserter getNullOrEmptyAsserter(Object value, String path) {
+        Map<String, Function<String, JsonAsserter>> nullEmptyAsserters = new HashMap<>();
+        nullEmptyAsserters.put(ASSERT_VALUE_NOT_NULL, FieldIsNotNullAsserter::new);
+        nullEmptyAsserters.put(ASSERT_VALUE_IS_NOT_NULL, FieldIsNotNullAsserter::new);
+        nullEmptyAsserters.put(ASSERT_VALUE_IS_NULL, FieldIsNullAsserter::new);
+        nullEmptyAsserters.put(ASSERT_VALUE_NULL, FieldIsNullAsserter::new);
+        nullEmptyAsserters.put(ASSERT_VALUE_EMPTY_ARRAY, ArrayIsEmptyAsserterImpl::new);
+        for (Map.Entry<String, Function<String, JsonAsserter>> mapEntry : nullEmptyAsserters.entrySet()) {
+            if (mapEntry.getKey().equals(value)) {
+                return mapEntry.getValue().apply(path);
+            }
+        }
+        return null;
     }
 }

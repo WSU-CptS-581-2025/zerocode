@@ -18,16 +18,16 @@ import com.univocity.parsers.csv.CsvParser;
 /**
  * Data loading in the database from a CSV external source
  */
-class DbCsvLoader {
+public class DbCsvLoader {
 	private static final Logger LOGGER = LoggerFactory.getLogger(DbCsvLoader.class);
 
-	private Connection conn;
-	private CsvParser csvParser;								   
+    private final Connection conn;
+    private final CsvParser csvParser;
 
-	public DbCsvLoader(Connection conn, CsvParser csvParser) {
-		this.conn = conn;
-		this.csvParser = csvParser;
-	}
+    public DbCsvLoader(Connection conn, CsvParser csvParser) {
+        this.conn = conn;
+        this.csvParser = csvParser;
+    }
 
 	/**
 	 * Loads rows in CSV format (csvLines) into a table in the database
